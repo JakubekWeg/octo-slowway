@@ -5,7 +5,8 @@ export interface Car {
   centerX: number;
   centerY: number;
   rotation: number;
-  velocity: number;
+  velocityX: number;
+  velocityY: number;
   gasPressed: boolean;
   breakPressed: boolean;
   right: boolean;
@@ -33,7 +34,8 @@ export const createCar = (
     centerX: x,
     centerY: y,
     rotation: 0.00001,
-    velocity: 0,
+    velocityX: 0,
+    velocityY: 0,
     gasPressed: false,
     breakPressed: false,
     right: false,

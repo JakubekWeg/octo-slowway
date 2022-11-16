@@ -1,16 +1,18 @@
 // src/constants.ts
-var GAME_WIDTH = 2800;
-var GAME_HEIGHT = 2e3;
+var GAME_WIDTH = 5e3;
+var GAME_HEIGHT = 4e3;
 var CAR_WIDTH = 40;
 var CAR_HEIGHT = 80;
 var CAMERA_WIDTH = 700;
 var CAMERA_HEIGHT = 700;
-var CAR_ACCELERATION_ROAD = 2e-3;
-var CAR_ACCELERATION_GROUND = 15e-4;
-var DRAG_ROAD = 5e-3;
-var DRAG_GROUND = 9e-3;
-var TURN_SPEED_ROAD = 5e-3;
-var TURN_SPEED_GROUND = 3e-3;
+var CAR_ACCELERATION_ROAD = 25e-4;
+var CAR_ACCELERATION_GROUND = 25e-4;
+var CAR_GRIP_PERCENTAGE_ROAD = 0.6;
+var CAR_GRIP_PERCENTAGE_GROUND = 0.3;
+var DRAG_ROAD = 4e-3;
+var DRAG_GROUND = 0.01;
+var TURN_SPEED_ROAD = 2e-3;
+var TURN_SPEED_GROUND = 2e-3;
 
 // src/car.ts
 var createElement = (root, color) => {
@@ -28,7 +30,8 @@ var createCar = (x, y, color, root) => {
     centerX: x,
     centerY: y,
     rotation: 1e-5,
-    velocity: 0,
+    velocityX: 0,
+    velocityY: 0,
     gasPressed: false,
     breakPressed: false,
     right: false,
@@ -111,22 +114,28 @@ var updatePositionCar = (level2, car, delta) => {
     car.centerY,
     car.rotation
   );
-  car.velocity -= car.velocity * (isOnRoad ? DRAG_ROAD : DRAG_GROUND) * delta;
+  const grip = isOnRoad ? CAR_GRIP_PERCENTAGE_ROAD : CAR_GRIP_PERCENTAGE_GROUND;
+  car.velocityX -= car.velocityX * (isOnRoad ? DRAG_ROAD : DRAG_GROUND) * delta * (1 - Math.abs(Math.sin(-car.rotation)) * grip);
+  car.velocityY -= car.velocityY * (isOnRoad ? DRAG_ROAD : DRAG_GROUND) * delta * (1 - Math.abs(Math.cos(-car.rotation)) * grip);
   const acceleration = isOnRoad ? CAR_ACCELERATION_ROAD : CAR_ACCELERATION_GROUND;
+  let addedAcceleration = 0;
   if (car.gasPressed)
-    car.velocity += acceleration * delta;
+    addedAcceleration += acceleration * delta;
   if (car.breakPressed)
-    car.velocity -= acceleration * delta;
+    addedAcceleration -= acceleration * delta;
   let newRotation = car.rotation;
   const turnSpeed = isOnRoad ? TURN_SPEED_ROAD : TURN_SPEED_GROUND;
+  const currentVelocity = Math.sqrt(
+    car.velocityX * car.velocityX + car.velocityY * car.velocityY
+  );
   if (car.left)
-    newRotation -= Math.PI * turnSpeed * delta * car.velocity;
+    newRotation -= Math.PI * turnSpeed * delta * currentVelocity;
   if (car.right)
-    newRotation += Math.PI * turnSpeed * delta * car.velocity;
-  const velocityX = car.velocity * Math.cos(-car.rotation + Math.PI / 2);
-  const velocityY = car.velocity * Math.sin(-car.rotation + Math.PI / 2);
-  const newCenterX = car.centerX + velocityX * delta;
-  const newCenterY = car.centerY - velocityY * delta;
+    newRotation += Math.PI * turnSpeed * delta * currentVelocity;
+  car.velocityX += addedAcceleration * Math.cos(-car.rotation + Math.PI / 2);
+  car.velocityY += addedAcceleration * Math.sin(-car.rotation + Math.PI / 2);
+  const newCenterX = car.centerX + car.velocityX * delta;
+  const newCenterY = car.centerY - car.velocityY * delta;
   const crashed = checkCarPosition(
     level2.obstacles,
     newCenterX,
@@ -134,8 +143,9 @@ var updatePositionCar = (level2, car, delta) => {
     car.rotation
   );
   if (crashed) {
-    car.velocity *= -0.3;
-    console.log("Hit", Math.abs(car.velocity) * 1e3 | 0);
+    car.velocityX *= -0.2;
+    car.velocityY *= -0.2;
+    console.log("Hit", currentVelocity | 0);
   } else {
     car.centerX = newCenterX;
     car.centerY = newCenterY;
@@ -163,7 +173,6 @@ var update = (time) => {
   const delta = time - previous;
   previous = time;
   updatePositionCar(level, car1, delta);
-  updatePositionCar(level, car2, delta);
   updateVisuals(car1);
   updateVisuals(car2);
   gameDiv.scrollLeft = car1.centerX - CAMERA_WIDTH / 2;

@@ -18,7 +18,7 @@ const update = (time: number) => {
   previous = time;
 
   updatePositionCar(level, car1, delta);
-  updatePositionCar(level, car2, delta);
+  //   updatePositionCar(level, car2, delta);
   updateVisuals(car1);
   updateVisuals(car2);
 

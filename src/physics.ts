@@ -2,6 +2,8 @@ import { Car } from "./car";
 import {
   CAR_ACCELERATION_GROUND,
   CAR_ACCELERATION_ROAD,
+  CAR_GRIP_PERCENTAGE_GROUND,
+  CAR_GRIP_PERCENTAGE_ROAD,
   CAR_HEIGHT,
   CAR_WIDTH,
   DRAG_GROUND,
@@ -19,25 +21,40 @@ export const updatePositionCar = (level: Level, car: Car, delta: number) => {
     car.rotation
   );
 
-  car.velocity -= car.velocity * (isOnRoad ? DRAG_ROAD : DRAG_GROUND) * delta;
+  const grip = isOnRoad ? CAR_GRIP_PERCENTAGE_ROAD : CAR_GRIP_PERCENTAGE_GROUND;
+  car.velocityX -=
+    car.velocityX *
+    (isOnRoad ? DRAG_ROAD : DRAG_GROUND) *
+    delta *
+    (1 - Math.abs(Math.sin(-car.rotation)) * grip);
+  car.velocityY -=
+    car.velocityY *
+    (isOnRoad ? DRAG_ROAD : DRAG_GROUND) *
+    delta *
+    (1 - Math.abs(Math.cos(-car.rotation)) * grip);
 
   const acceleration = isOnRoad
     ? CAR_ACCELERATION_ROAD
     : CAR_ACCELERATION_GROUND;
 
-  if (car.gasPressed) car.velocity += acceleration * delta;
-  if (car.breakPressed) car.velocity -= acceleration * delta;
+  let addedAcceleration = 0;
+
+  if (car.gasPressed) addedAcceleration += acceleration * delta;
+  if (car.breakPressed) addedAcceleration -= acceleration * delta;
 
   let newRotation = car.rotation;
   const turnSpeed = isOnRoad ? TURN_SPEED_ROAD : TURN_SPEED_GROUND;
-  if (car.left) newRotation -= Math.PI * turnSpeed * delta * car.velocity;
-  if (car.right) newRotation += Math.PI * turnSpeed * delta * car.velocity;
+  const currentVelocity = Math.sqrt(
+    car.velocityX * car.velocityX + car.velocityY * car.velocityY
+  );
+  if (car.left) newRotation -= Math.PI * turnSpeed * delta * currentVelocity;
+  if (car.right) newRotation += Math.PI * turnSpeed * delta * currentVelocity;
 
-  const velocityX = car.velocity * Math.cos(-car.rotation + Math.PI / 2);
-  const velocityY = car.velocity * Math.sin(-car.rotation + Math.PI / 2);
+  car.velocityX += addedAcceleration * Math.cos(-car.rotation + Math.PI / 2);
+  car.velocityY += addedAcceleration * Math.sin(-car.rotation + Math.PI / 2);
 
-  const newCenterX = car.centerX + velocityX * delta;
-  const newCenterY = car.centerY - velocityY * delta;
+  const newCenterX = car.centerX + car.velocityX * delta;
+  const newCenterY = car.centerY - car.velocityY * delta;
   const crashed = checkCarPosition(
     level.obstacles,
     newCenterX,
@@ -46,8 +63,9 @@ export const updatePositionCar = (level: Level, car: Car, delta: number) => {
   );
 
   if (crashed) {
-    car.velocity *= -0.3;
-    console.log("Hit", (Math.abs(car.velocity) * 1000) | 0);
+    car.velocityX *= -0.2;
+    car.velocityY *= -0.2;
+    console.log("Hit", currentVelocity | 0);
   } else {
     car.centerX = newCenterX;
     car.centerY = newCenterY;

@@ -1,6 +1,7 @@
 {
     "compilerOptions": {
+        "target": "ESNext",
         "noImplicitAny": true,
-        "outFile": "docs/bundle.js"
+        "module": "ESNext"
     }
 }

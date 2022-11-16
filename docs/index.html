@@ -13,12 +13,22 @@
         }
         #game {
             display: inline-block;
+            position: relative;
             margin: 16px;
             border: 2px solid green;
             width: var(--width);
             height: var(--height);
             box-sizing: border-box;
             overflow: hidden;
+        }
+        .car {
+            position: absolute;
+            width: 10px;
+            height: 20px;
+            background-color: greenyellow;
+            top: 0;
+            left:0;
+            transform: translate(var(--x), var(--y)) rotate(var(--angle));
         }
     </style>
 </head>

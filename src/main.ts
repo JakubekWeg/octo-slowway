@@ -1,12 +1,13 @@
 import { Car, createCar, updateVisuals } from "./car";
-import { GAME_HEIGHT, GAME_WIDTH } from "./constants";
+import { CAMERA_HEIGHT, CAMERA_WIDTH } from "./constants";
 import { downloadLevel } from "./level";
 import { updatePositionCar } from "./physics";
 
 const gameDiv = document.getElementById("game");
-gameDiv.style.setProperty("--width", `${GAME_WIDTH}px`);
-gameDiv.style.setProperty("--height", `${GAME_HEIGHT}px`);
+gameDiv.style.setProperty("--width", `${CAMERA_WIDTH}px`);
+gameDiv.style.setProperty("--height", `${CAMERA_HEIGHT}px`);
 const level = await downloadLevel();
+gameDiv.appendChild(level.visual);
 
 const car1: Car = createCar(100, 50, "green", gameDiv);
 const car2: Car = createCar(50, 50, "blue", gameDiv);
@@ -20,6 +21,9 @@ const update = (time: number) => {
   updatePositionCar(level, car2, delta);
   updateVisuals(car1);
   updateVisuals(car2);
+
+  gameDiv.scrollLeft = car1.centerX - CAMERA_WIDTH / 2;
+  gameDiv.scrollTop = car1.centerY - CAMERA_HEIGHT / 2;
 
   requestAnimationFrame(update);
 };

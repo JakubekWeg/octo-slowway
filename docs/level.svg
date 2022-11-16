@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="700"
-   height="500"
-   viewBox="0 0 185.20833 132.29167"
+   width="1400"
+   height="1000"
+   viewBox="0 0 370.41666 264.58334"
    version="1.1"
    id="svg5"
    inkscape:version="1.2.1 (9c6d41e4, 2022-07-14)"
@@ -25,34 +25,22 @@
      inkscape:deskcolor="#505050"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="0.7736196"
-     inkscape:cx="43.302936"
-     inkscape:cy="287.60905"
+     inkscape:zoom="0.36747035"
+     inkscape:cx="825.91697"
+     inkscape:cy="336.08154"
      inkscape:window-width="1536"
      inkscape:window-height="907"
      inkscape:window-x="227"
      inkscape:window-y="1105"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" /><defs
+     inkscape:current-layer="layer2" /><defs
      id="defs2" /><g
      inkscape:label="visible"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(3.4200697,3.4200692)"><rect
-       style="fill:#d40000;stroke-width:0.264583"
-       id="rect157"
-       width="35.568729"
-       height="31.464645"
-       x="25.992533"
-       y="41.382851" /><rect
-       style="fill:#d40000;stroke-width:0.264583"
-       id="rect159"
-       width="35.568729"
-       height="28.386583"
-       x="123.46453"
-       y="18.126371" /><image
-       width="70.075768"
-       height="59.131538"
+     transform="translate(3.4200697,3.4200692)"><image
+       width="371.09543"
+       height="265.52341"
        preserveAspectRatio="none"
        xlink:href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD//gA8Q1JFQVRPUjogZ2QtanBlZyB2MS4wICh1c2luZyBJSkcg
 SlBFRyB2NjIpLCBxdWFsaXR5ID0gMTAwCv/bAEMAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB
@@ -4507,15 +4495,15 @@ fPpjtXp3h+GLcjM4zzkDdxz3yP5flTb0j5N267ry29WPC1Iwpz55JPni01d30euiuraN27ruerWt
 wnKUWldJWVtX0369l22W56+GrUnF8slZNfNu1npv5+tl2P/Z
 "
        id="image385"
-       x="19.34123"
-       y="60.724075"
-       transform="translate(-3.4200697,-3.4200692)" /></g><g
+       x="-3.2312322"
+       y="-3.231236" /></g><g
      inkscape:groupmode="layer"
      id="layer2"
-     inkscape:label="physics"><ellipse
-       style="fill:#d40000;stroke-width:0.264583"
-       id="path161"
-       cx="117.13741"
-       cy="82.252686"
-       rx="23.769487"
-       ry="20.862427" /></g></svg>
+     inkscape:label="physics"><rect
+       style="fill:#d40000;stroke-width:1.04682"
+       id="rect159"
+       width="121.2113"
+       height="130.39546"
+       x="103.90177"
+       y="15.59462"
+       ry="64.412216" /></g></svg>

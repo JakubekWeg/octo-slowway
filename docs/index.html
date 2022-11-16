@@ -21,13 +21,15 @@
             box-sizing: border-box;
             overflow: hidden;
         }
-        .car {
+        #game>* {
             position: absolute;
+            top: 0;
+            left:0;
+        }
+        .car {
             width: var(--width);
             height: var(--height);
             background-color: greenyellow;
-            top: 0;
-            left:0;
             transform: translate(calc(var(--x) - var(--width) / 2), calc(var(--y) - var(--height) / 2)) rotate(var(--angle));
         }
     </style>

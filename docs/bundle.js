@@ -1,8 +1,10 @@
 // src/constants.ts
-var GAME_WIDTH = 700;
-var GAME_HEIGHT = 500;
+var GAME_WIDTH = 1400;
+var GAME_HEIGHT = 1e3;
 var CAR_WIDTH = 40;
 var CAR_HEIGHT = 80;
+var CAMERA_WIDTH = 700;
+var CAMERA_HEIGHT = 700;
 
 // src/car.ts
 var createElement = (root, color) => {
@@ -62,10 +64,21 @@ var extractObstacleData = async (svgContent) => {
   }
   return redData;
 };
+var extractVisualCanvas = async (svgContent) => {
+  const svg = getSourceFilterGroup(svgContent, "visible");
+  const img = await createImage("data:image/svg+xml;base64," + btoa(svg));
+  const canvas = document.createElement("canvas");
+  canvas.width = GAME_WIDTH;
+  canvas.height = GAME_HEIGHT;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0);
+  return canvas;
+};
 var downloadLevel = async () => {
   const content = await (await fetch("./level.svg")).text();
   return {
-    obstacles: await extractObstacleData(content)
+    obstacles: await extractObstacleData(content),
+    visual: await extractVisualCanvas(content)
   };
 };
 var isThereAnyColor = (data, x, y) => {
@@ -109,9 +122,10 @@ var checkCarCrash = (level2, cx, cy, angle) => {
 
 // src/main.ts
 var gameDiv = document.getElementById("game");
-gameDiv.style.setProperty("--width", `${GAME_WIDTH}px`);
-gameDiv.style.setProperty("--height", `${GAME_HEIGHT}px`);
+gameDiv.style.setProperty("--width", `${CAMERA_WIDTH}px`);
+gameDiv.style.setProperty("--height", `${CAMERA_HEIGHT}px`);
 var level = await downloadLevel();
+gameDiv.appendChild(level.visual);
 var car1 = createCar(100, 50, "green", gameDiv);
 var car2 = createCar(50, 50, "blue", gameDiv);
 var previous = performance.now();
@@ -122,6 +136,8 @@ var update = (time) => {
   updatePositionCar(level, car2, delta);
   updateVisuals(car1);
   updateVisuals(car2);
+  gameDiv.scrollLeft = car1.centerX - CAMERA_WIDTH / 2;
+  gameDiv.scrollTop = car1.centerY - CAMERA_HEIGHT / 2;
   requestAnimationFrame(update);
 };
 requestAnimationFrame(update);

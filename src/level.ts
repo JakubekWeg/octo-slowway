@@ -2,6 +2,7 @@ import { GAME_HEIGHT, GAME_WIDTH } from "./constants";
 
 export interface Level {
   obstacles: Uint8ClampedArray;
+  visual: HTMLCanvasElement;
 }
 
 const getSourceFilterGroup = (
@@ -45,11 +46,25 @@ const extractObstacleData = async (svgContent: string) => {
   return redData;
 };
 
+const extractVisualCanvas = async (svgContent: string) => {
+  const svg = getSourceFilterGroup(svgContent, "visible");
+  const img = await createImage("data:image/svg+xml;base64," + btoa(svg));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = GAME_WIDTH;
+  canvas.height = GAME_HEIGHT;
+
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0);
+  return canvas;
+};
+
 export const downloadLevel = async (): Promise<Level> => {
   const content = await (await fetch("./level.svg")).text();
 
   return {
     obstacles: await extractObstacleData(content),
+    visual: await extractVisualCanvas(content),
   };
 };
 export const isThereAnyColor = (

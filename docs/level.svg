@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="1400"
-   height="1000"
-   viewBox="0 0 370.41666 264.58334"
+   width="2800"
+   height="2000"
+   viewBox="0 0 740.83332 529.16668"
    version="1.1"
    id="svg5"
    inkscape:version="1.2.1 (9c6d41e4, 2022-07-14)"
@@ -25,9 +25,9 @@
      inkscape:deskcolor="#505050"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="0.36747035"
-     inkscape:cx="825.91697"
-     inkscape:cy="336.08154"
+     inkscape:zoom="0.22619233"
+     inkscape:cx="718.41516"
+     inkscape:cy="851.04565"
      inkscape:window-width="1536"
      inkscape:window-height="907"
      inkscape:window-x="227"
@@ -39,8 +39,8 @@
      inkscape:groupmode="layer"
      id="layer1"
      transform="translate(3.4200697,3.4200692)"><image
-       width="371.09543"
-       height="265.52341"
+       width="741.89899"
+       height="529.88177"
        preserveAspectRatio="none"
        xlink:href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD//gA8Q1JFQVRPUjogZ2QtanBlZyB2MS4wICh1c2luZyBJSkcg
 SlBFRyB2NjIpLCBxdWFsaXR5ID0gMTAwCv/bAEMAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB
@@ -4495,15 +4495,19 @@ fPpjtXp3h+GLcjM4zzkDdxz3yP5flTb0j5N267ry29WPC1Iwpz55JPni01d30euiuraN27ruerWt
 wnKUWldJWVtX0369l22W56+GrUnF8slZNfNu1npv5+tl2P/Z
 "
        id="image385"
-       x="-3.2312322"
-       y="-3.231236" /></g><g
+       x="-3.2312317"
+       y="-3.2312317" /></g><g
      inkscape:groupmode="layer"
      id="layer2"
-     inkscape:label="physics"><rect
-       style="fill:#d40000;stroke-width:1.04682"
+     inkscape:label="obstacles"><rect
+       style="fill:#d40000;stroke-width:2.11044"
        id="rect159"
-       width="121.2113"
-       height="130.39546"
-       x="103.90177"
-       y="15.59462"
-       ry="64.412216" /></g></svg>
+       width="255.26143"
+       height="251.66478"
+       x="198.64499"
+       y="16.197926"
+       ry="124.31634" /></g><g
+     inkscape:groupmode="layer"
+     id="layer2-8"
+     inkscape:label="road"
+     transform="translate(54.016442,8.1292222)" /></svg>

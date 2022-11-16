@@ -2,13 +2,11 @@ import { GAME_HEIGHT, GAME_WIDTH } from "./constants";
 
 export interface Level {
   obstacles: Uint8ClampedArray;
+  road: Uint8ClampedArray;
   visual: HTMLCanvasElement;
 }
 
-const getSourceFilterGroup = (
-  content: string,
-  name: "visible" | "physics"
-): string => {
+const getSourceFilterGroup = (content: string, name: string): string => {
   const svgDoc = new DOMParser().parseFromString(content, "image/svg+xml");
   [...svgDoc.querySelectorAll(`svg>g`)]
     .filter((e) => e.getAttribute("inkscape:label") !== name)
@@ -26,8 +24,8 @@ const createImage = (src: string) => {
   );
 };
 
-const extractObstacleData = async (svgContent: string) => {
-  const svg = getSourceFilterGroup(svgContent, "physics");
+const extractTextureData = async (svgContent: string, groupName: string) => {
+  const svg = getSourceFilterGroup(svgContent, groupName);
   const img = await createImage("data:image/svg+xml;base64," + btoa(svg));
 
   const canvas = document.createElement("canvas");
@@ -38,12 +36,12 @@ const extractObstacleData = async (svgContent: string) => {
   ctx.drawImage(img, 0, 0);
   const { data } = ctx.getImageData(0, 0, GAME_WIDTH, GAME_HEIGHT);
   const pixelsCount = data.length / 4;
-  const redData = new Uint8ClampedArray(pixelsCount);
+  const colorData = new Uint8ClampedArray(pixelsCount);
   for (let i = 0, l = pixelsCount; i < l; ++i) {
-    redData[i] = data[i * 4];
+    colorData[i] = data[i * 4 + 3];
   }
 
-  return redData;
+  return colorData;
 };
 
 const extractVisualCanvas = async (svgContent: string) => {
@@ -63,7 +61,8 @@ export const downloadLevel = async (): Promise<Level> => {
   const content = await (await fetch("./level.svg")).text();
 
   return {
-    obstacles: await extractObstacleData(content),
+    obstacles: await extractTextureData(content, "obstacles"),
+    road: await extractTextureData(content, "road"),
     visual: await extractVisualCanvas(content),
   };
 };

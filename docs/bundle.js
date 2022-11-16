@@ -1,10 +1,16 @@
 // src/constants.ts
-var GAME_WIDTH = 1400;
-var GAME_HEIGHT = 1e3;
+var GAME_WIDTH = 2800;
+var GAME_HEIGHT = 2e3;
 var CAR_WIDTH = 40;
 var CAR_HEIGHT = 80;
 var CAMERA_WIDTH = 700;
 var CAMERA_HEIGHT = 700;
+var CAR_ACCELERATION_ROAD = 2e-3;
+var CAR_ACCELERATION_GROUND = 15e-4;
+var DRAG_ROAD = 5e-3;
+var DRAG_GROUND = 9e-3;
+var TURN_SPEED_ROAD = 2e-3;
+var TURN_SPEED_GROUND = 5e-4;
 
 // src/car.ts
 var createElement = (root, color) => {
@@ -48,8 +54,8 @@ var createImage = (src) => {
     (resolve) => img.onload = () => resolve(img)
   );
 };
-var extractObstacleData = async (svgContent) => {
-  const svg = getSourceFilterGroup(svgContent, "physics");
+var extractTextureData = async (svgContent, groupName) => {
+  const svg = getSourceFilterGroup(svgContent, groupName);
   const img = await createImage("data:image/svg+xml;base64," + btoa(svg));
   const canvas = document.createElement("canvas");
   canvas.width = GAME_WIDTH;
@@ -58,11 +64,11 @@ var extractObstacleData = async (svgContent) => {
   ctx.drawImage(img, 0, 0);
   const { data } = ctx.getImageData(0, 0, GAME_WIDTH, GAME_HEIGHT);
   const pixelsCount = data.length / 4;
-  const redData = new Uint8ClampedArray(pixelsCount);
+  const colorData = new Uint8ClampedArray(pixelsCount);
   for (let i = 0, l = pixelsCount; i < l; ++i) {
-    redData[i] = data[i * 4];
+    colorData[i] = data[i * 4 + 3];
   }
-  return redData;
+  return colorData;
 };
 var extractVisualCanvas = async (svgContent) => {
   const svg = getSourceFilterGroup(svgContent, "visible");
@@ -77,7 +83,8 @@ var extractVisualCanvas = async (svgContent) => {
 var downloadLevel = async () => {
   const content = await (await fetch("./level.svg")).text();
   return {
-    obstacles: await extractObstacleData(content),
+    obstacles: await extractTextureData(content, "obstacles"),
+    road: await extractTextureData(content, "road"),
     visual: await extractVisualCanvas(content)
   };
 };
@@ -91,33 +98,49 @@ var isThereAnyColor = (data, x, y) => {
 
 // src/physics.ts
 var updatePositionCar = (level2, car, delta) => {
-  car.velocity -= car.velocity * 2e-3 * delta;
+  const isOnRoad = checkCarPosition(
+    level2.road,
+    car.centerX,
+    car.centerY,
+    car.rotation
+  );
+  car.velocity -= car.velocity * (isOnRoad ? DRAG_ROAD : DRAG_GROUND) * delta;
+  const acceleration = isOnRoad ? CAR_ACCELERATION_ROAD : CAR_ACCELERATION_GROUND;
   if (car.gasPressed)
-    car.velocity += 1e-3 * delta;
+    car.velocity += acceleration * delta;
   if (car.breakPressed)
-    car.velocity -= 11e-4 * delta;
+    car.velocity -= acceleration * delta;
   let newRotation = car.rotation;
+  const turnSpeed = isOnRoad ? TURN_SPEED_ROAD : TURN_SPEED_GROUND;
   if (car.left)
-    newRotation -= Math.PI * 2e-3 * delta;
+    newRotation -= Math.PI * turnSpeed * delta;
   if (car.right)
-    newRotation += Math.PI * 2e-3 * delta;
+    newRotation += Math.PI * turnSpeed * delta;
   const velocityX = car.velocity * Math.cos(-car.rotation + Math.PI / 2);
   const velocityY = car.velocity * Math.sin(-car.rotation + Math.PI / 2);
   const newCenterX = car.centerX + velocityX * delta;
   const newCenterY = car.centerY - velocityY * delta;
-  const crashed = checkCarCrash(level2, newCenterX, newCenterY, car.rotation);
-  if (!crashed) {
+  const crashed = checkCarPosition(
+    level2.obstacles,
+    newCenterX,
+    newCenterY,
+    car.rotation
+  );
+  if (crashed) {
+    car.velocity *= -0.05;
+    console.log("Hit", Math.abs(car.velocity) * 1e3 | 0);
+  } else {
     car.centerX = newCenterX;
     car.centerY = newCenterY;
     car.rotation = newRotation;
   }
 };
-var checkCarCrash = (level2, cx, cy, angle) => {
+var checkCarPosition = (data, cx, cy, angle) => {
   const x1 = CAR_HEIGHT / 2 * Math.cos(-angle + Math.PI / 2);
   const y1 = CAR_HEIGHT / 2 * Math.sin(-angle + Math.PI / 2);
   const x2 = CAR_WIDTH / 2 * Math.cos(-angle);
   const y2 = CAR_WIDTH / 2 * Math.sin(-angle);
-  return isThereAnyColor(level2.obstacles, cx - x1 - x2, cy + y1 + y2) || isThereAnyColor(level2.obstacles, cx + x1 + x2, cy - y1 - y2) || isThereAnyColor(level2.obstacles, cx - x1 + x2, cy + y1 - y2) || isThereAnyColor(level2.obstacles, cx + x1 - x2, cy - y1 + y2) || false;
+  return isThereAnyColor(data, cx - x1 - x2, cy + y1 + y2) || isThereAnyColor(data, cx + x1 + x2, cy - y1 - y2) || isThereAnyColor(data, cx - x1 + x2, cy + y1 - y2) || isThereAnyColor(data, cx + x1 - x2, cy - y1 + y2) || false;
 };
 
 // src/main.ts

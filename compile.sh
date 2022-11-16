@@ -1,0 +1,1 @@
+esbuild src/main.ts --bundle --outfile=docs/bundle.js --format=esm --watch

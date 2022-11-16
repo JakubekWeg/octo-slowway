@@ -1,0 +1,6 @@
+{
+    "compilerOptions": {
+        "noImplicitAny": true,
+        "outFile": "docs/bundle.js"
+    }
+}

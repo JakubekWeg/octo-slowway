@@ -23,12 +23,12 @@
         }
         .car {
             position: absolute;
-            width: 10px;
-            height: 20px;
+            width: var(--width);
+            height: var(--height);
             background-color: greenyellow;
             top: 0;
             left:0;
-            transform: translate(var(--x), var(--y)) rotate(var(--angle));
+            transform: translate(calc(var(--x) - var(--width) / 2), calc(var(--y) - var(--height) / 2)) rotate(var(--angle));
         }
     </style>
 </head>

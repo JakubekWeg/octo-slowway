@@ -1,6 +1,6 @@
 // src/constants.ts
-var GAME_WIDTH = 1400;
-var GAME_HEIGHT = 1e3;
+var GAME_WIDTH = 2800;
+var GAME_HEIGHT = 2e3;
 var CAR_WIDTH = 40;
 var CAR_HEIGHT = 80;
 var CAMERA_WIDTH = 700;
@@ -16,8 +16,8 @@ var TURN_SPEED_GROUND = 3e-3;
 var createElement = (root, color) => {
   const car = document.createElement("div");
   car.classList.add("car");
-  car.style.setProperty("--width", `${CAR_WIDTH | 0}px`);
-  car.style.setProperty("--height", `${CAR_HEIGHT | 0}px`);
+  car.style.setProperty("--width", `${CAR_WIDTH.toFixed(2)}px`);
+  car.style.setProperty("--height", `${CAR_HEIGHT.toFixed(2)}px`);
   car.style.backgroundColor = color;
   root.appendChild(car);
   return car;
@@ -36,9 +36,9 @@ var createCar = (x, y, color, root) => {
   };
 };
 var updateVisuals = (car) => {
-  car.element.style.setProperty("--x", `${car.centerX | 0}px`);
-  car.element.style.setProperty("--y", `${car.centerY | 0}px`);
-  car.element.style.setProperty("--angle", `${car.rotation}rad`);
+  car.element.style.setProperty("--x", `${car.centerX.toFixed(2)}px`);
+  car.element.style.setProperty("--y", `${car.centerY.toFixed(2)}px`);
+  car.element.style.setProperty("--angle", `${car.rotation.toFixed(2)}rad`);
 };
 
 // src/level.ts

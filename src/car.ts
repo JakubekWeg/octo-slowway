@@ -15,8 +15,8 @@ export interface Car {
 const createElement = (root: HTMLElement, color: string): HTMLElement => {
   const car = document.createElement("div");
   car.classList.add("car");
-  car.style.setProperty("--width", `${CAR_WIDTH | 0}px`);
-  car.style.setProperty("--height", `${CAR_HEIGHT | 0}px`);
+  car.style.setProperty("--width", `${CAR_WIDTH.toFixed(2)}px`);
+  car.style.setProperty("--height", `${CAR_HEIGHT.toFixed(2)}px`);
   car.style.backgroundColor = color;
   root.appendChild(car);
   return car;
@@ -42,7 +42,7 @@ export const createCar = (
 };
 
 export const updateVisuals = (car: Car) => {
-  car.element.style.setProperty("--x", `${car.centerX | 0}px`);
-  car.element.style.setProperty("--y", `${car.centerY | 0}px`);
-  car.element.style.setProperty("--angle", `${car.rotation}rad`);
+  car.element.style.setProperty("--x", `${car.centerX.toFixed(2)}px`);
+  car.element.style.setProperty("--y", `${car.centerY.toFixed(2)}px`);
+  car.element.style.setProperty("--angle", `${car.rotation.toFixed(2)}rad`);
 };

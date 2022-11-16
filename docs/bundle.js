@@ -1,6 +1,6 @@
 // src/constants.ts
-var GAME_WIDTH = 2800;
-var GAME_HEIGHT = 2e3;
+var GAME_WIDTH = 1400;
+var GAME_HEIGHT = 1e3;
 var CAR_WIDTH = 40;
 var CAR_HEIGHT = 80;
 var CAMERA_WIDTH = 700;
@@ -9,8 +9,8 @@ var CAR_ACCELERATION_ROAD = 2e-3;
 var CAR_ACCELERATION_GROUND = 15e-4;
 var DRAG_ROAD = 5e-3;
 var DRAG_GROUND = 9e-3;
-var TURN_SPEED_ROAD = 2e-3;
-var TURN_SPEED_GROUND = 5e-4;
+var TURN_SPEED_ROAD = 5e-3;
+var TURN_SPEED_GROUND = 3e-3;
 
 // src/car.ts
 var createElement = (root, color) => {
@@ -54,14 +54,21 @@ var createImage = (src) => {
     (resolve) => img.onload = () => resolve(img)
   );
 };
+var TEXTURE_DATA_DIVISOR = 2;
 var extractTextureData = async (svgContent, groupName) => {
   const svg = getSourceFilterGroup(svgContent, groupName);
   const img = await createImage("data:image/svg+xml;base64," + btoa(svg));
   const canvas = document.createElement("canvas");
-  canvas.width = GAME_WIDTH;
-  canvas.height = GAME_HEIGHT;
+  canvas.width = GAME_WIDTH / TEXTURE_DATA_DIVISOR | 0;
+  canvas.height = GAME_HEIGHT / TEXTURE_DATA_DIVISOR | 0;
   const ctx = canvas.getContext("2d");
-  ctx.drawImage(img, 0, 0);
+  ctx.drawImage(
+    img,
+    0,
+    0,
+    GAME_WIDTH / TEXTURE_DATA_DIVISOR,
+    GAME_HEIGHT / TEXTURE_DATA_DIVISOR
+  );
   const { data } = ctx.getImageData(0, 0, GAME_WIDTH, GAME_HEIGHT);
   const pixelsCount = data.length / 4;
   const colorData = new Uint8ClampedArray(pixelsCount);
@@ -91,7 +98,7 @@ var downloadLevel = async () => {
 var isThereAnyColor = (data, x, y) => {
   if (x < 0 || y < 0 || x >= GAME_WIDTH || y >= GAME_HEIGHT)
     return true;
-  const pixelIndex = (x | 0) + (y | 0) * GAME_WIDTH;
+  const pixelIndex = (x / TEXTURE_DATA_DIVISOR | 0) + (y / TEXTURE_DATA_DIVISOR | 0) * GAME_WIDTH;
   const isInRed = data[pixelIndex] > 0;
   return isInRed;
 };
@@ -113,9 +120,9 @@ var updatePositionCar = (level2, car, delta) => {
   let newRotation = car.rotation;
   const turnSpeed = isOnRoad ? TURN_SPEED_ROAD : TURN_SPEED_GROUND;
   if (car.left)
-    newRotation -= Math.PI * turnSpeed * delta;
+    newRotation -= Math.PI * turnSpeed * delta * car.velocity;
   if (car.right)
-    newRotation += Math.PI * turnSpeed * delta;
+    newRotation += Math.PI * turnSpeed * delta * car.velocity;
   const velocityX = car.velocity * Math.cos(-car.rotation + Math.PI / 2);
   const velocityY = car.velocity * Math.sin(-car.rotation + Math.PI / 2);
   const newCenterX = car.centerX + velocityX * delta;
@@ -127,7 +134,7 @@ var updatePositionCar = (level2, car, delta) => {
     car.rotation
   );
   if (crashed) {
-    car.velocity *= -0.05;
+    car.velocity *= -0.3;
     console.log("Hit", Math.abs(car.velocity) * 1e3 | 0);
   } else {
     car.centerX = newCenterX;

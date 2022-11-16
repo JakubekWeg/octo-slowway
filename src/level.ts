@@ -24,16 +24,23 @@ const createImage = (src: string) => {
   );
 };
 
+const TEXTURE_DATA_DIVISOR = 2;
 const extractTextureData = async (svgContent: string, groupName: string) => {
   const svg = getSourceFilterGroup(svgContent, groupName);
   const img = await createImage("data:image/svg+xml;base64," + btoa(svg));
 
   const canvas = document.createElement("canvas");
-  canvas.width = GAME_WIDTH;
-  canvas.height = GAME_HEIGHT;
+  canvas.width = (GAME_WIDTH / TEXTURE_DATA_DIVISOR) | 0;
+  canvas.height = (GAME_HEIGHT / TEXTURE_DATA_DIVISOR) | 0;
 
   const ctx = canvas.getContext("2d");
-  ctx.drawImage(img, 0, 0);
+  ctx.drawImage(
+    img,
+    0,
+    0,
+    GAME_WIDTH / TEXTURE_DATA_DIVISOR,
+    GAME_HEIGHT / TEXTURE_DATA_DIVISOR
+  );
   const { data } = ctx.getImageData(0, 0, GAME_WIDTH, GAME_HEIGHT);
   const pixelsCount = data.length / 4;
   const colorData = new Uint8ClampedArray(pixelsCount);
@@ -73,7 +80,9 @@ export const isThereAnyColor = (
 ): boolean => {
   if (x < 0 || y < 0 || x >= GAME_WIDTH || y >= GAME_HEIGHT) return true;
 
-  const pixelIndex = (x | 0) + (y | 0) * GAME_WIDTH;
+  const pixelIndex =
+    ((x / TEXTURE_DATA_DIVISOR) | 0) +
+    ((y / TEXTURE_DATA_DIVISOR) | 0) * GAME_WIDTH;
   const isInRed = data[pixelIndex] > 0;
 
   return isInRed;

@@ -30,8 +30,8 @@ export const updatePositionCar = (level: Level, car: Car, delta: number) => {
 
   let newRotation = car.rotation;
   const turnSpeed = isOnRoad ? TURN_SPEED_ROAD : TURN_SPEED_GROUND;
-  if (car.left) newRotation -= Math.PI * turnSpeed * delta;
-  if (car.right) newRotation += Math.PI * turnSpeed * delta;
+  if (car.left) newRotation -= Math.PI * turnSpeed * delta * car.velocity;
+  if (car.right) newRotation += Math.PI * turnSpeed * delta * car.velocity;
 
   const velocityX = car.velocity * Math.cos(-car.rotation + Math.PI / 2);
   const velocityY = car.velocity * Math.sin(-car.rotation + Math.PI / 2);
@@ -46,7 +46,7 @@ export const updatePositionCar = (level: Level, car: Car, delta: number) => {
   );
 
   if (crashed) {
-    car.velocity *= -0.05;
+    car.velocity *= -0.3;
     console.log("Hit", (Math.abs(car.velocity) * 1000) | 0);
   } else {
     car.centerX = newCenterX;

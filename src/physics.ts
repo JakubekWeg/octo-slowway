@@ -1,5 +1,7 @@
 import { Car } from "./car";
 import {
+  CAMERA_HEIGHT,
+  CAMERA_WIDTH,
   CAR_ACCELERATION_GROUND,
   CAR_ACCELERATION_ROAD,
   CAR_GRIP_PERCENTAGE_GROUND,
@@ -9,9 +11,13 @@ import {
   DRAG_GROUND,
   DRAG_ROAD,
   TURN_SPEED_GROUND,
-  TURN_SPEED_ROAD,
+  TURN_SPEED_ROAD
 } from "./constants";
 import { isThereAnyColor, Level } from "./level";
+
+const distanceSquared = (ax: number, ay: number, bx: number, by: number) => {
+  return (ax - bx) ** 2 + (ay - by) ** 2
+}
 
 export const updatePositionCar = (level: Level, car: Car, delta: number) => {
   const isOnRoad = checkCarPosition(
@@ -91,3 +97,33 @@ const checkCarPosition = (
     false
   );
 };
+
+export const restartIfCarsTooFarAway = (level: Level, car1: Car, car2: Car) => {
+  const deltaX = Math.abs(car1.centerX - car2.centerX)
+  const deltaY = Math.abs(car1.centerY - car2.centerY)
+
+
+  if (deltaX > CAMERA_WIDTH / 2 || deltaY > CAMERA_HEIGHT / 2) {
+    car1.centerX = car2.centerX
+    car1.centerY = car2.centerY
+    car1.velocityX = car1.velocityY = car2.velocityX = car2.velocityY = 0
+    console.log('teleport!');
+
+  }
+}
+
+
+export const calculatePathProgress = (level: Level, car1: Car, car2: Car) => {
+  let closestPoint = level.pathPoints[0]
+  let closestDistanceSquared = Number.MAX_VALUE
+  for (const p of level.pathPoints) {
+    const distance = distanceSquared(car1.centerX, car1.centerY, p.x, p.y)
+    if (distance < closestDistanceSquared) {
+      closestPoint = p
+      closestDistanceSquared = distance
+    }
+  }
+
+  car2.centerX = closestPoint.x
+  car2.centerY = closestPoint.y
+}

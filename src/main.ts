@@ -1,7 +1,7 @@
 import { Car, createCar, updateVisuals } from "./car";
 import { CAMERA_HEIGHT, CAMERA_WIDTH } from "./constants";
 import { downloadLevel } from "./level";
-import { updatePositionCar } from "./physics";
+import { calculatePathProgress, restartIfCarsTooFarAway, updatePositionCar } from "./physics";
 
 const gameDiv = document.getElementById("game");
 gameDiv.style.setProperty("--width", `${CAMERA_WIDTH}px`);
@@ -18,7 +18,11 @@ const update = (time: number) => {
   previous = time;
 
   updatePositionCar(level, car1, delta);
-  //   updatePositionCar(level, car2, delta);
+  updatePositionCar(level, car2, delta);
+
+  calculatePathProgress(level, car1, car2)
+  restartIfCarsTooFarAway(level, car1, car2)
+
   updateVisuals(car1);
   updateVisuals(car2);
 

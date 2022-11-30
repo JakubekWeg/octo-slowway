@@ -90,12 +90,28 @@ var extractVisualCanvas = async (svgContent) => {
   ctx.drawImage(img, 0, 0);
   return canvas;
 };
+var getPathPoints = (svgContent) => {
+  const svgDoc = new DOMParser().parseFromString(svgContent, "image/svg+xml");
+  const path = [...svgDoc.querySelectorAll(`path`)].find((e) => e.getAttribute("inkscape:label") === "checkpoints");
+  const [_, ...steps] = path.getAttribute("d").split(" ");
+  const moveCoords = steps.map((e) => e.split(",").map((e2) => parseFloat(e2)));
+  const pathPoints = [];
+  let x = 0;
+  let y = 0;
+  for (const [ox, oy] of moveCoords) {
+    x += ox;
+    y += oy;
+    pathPoints.push({ x, y });
+  }
+  return pathPoints;
+};
 var downloadLevel = async () => {
   const content = await (await fetch("./level.svg")).text();
   return {
     obstacles: await extractTextureData(content, "obstacles"),
     road: await extractTextureData(content, "road"),
-    visual: await extractVisualCanvas(content)
+    visual: await extractVisualCanvas(content),
+    pathPoints: getPathPoints(content)
   };
 };
 var isThereAnyColor = (data, x, y) => {
@@ -107,6 +123,9 @@ var isThereAnyColor = (data, x, y) => {
 };
 
 // src/physics.ts
+var distanceSquared = (ax, ay, bx, by) => {
+  return (ax - bx) ** 2 + (ay - by) ** 2;
+};
 var updatePositionCar = (level2, car, delta) => {
   const isOnRoad = checkCarPosition(
     level2.road,
@@ -159,6 +178,29 @@ var checkCarPosition = (data, cx, cy, angle) => {
   const y2 = CAR_WIDTH / 2 * Math.sin(-angle);
   return isThereAnyColor(data, cx - x1 - x2, cy + y1 + y2) || isThereAnyColor(data, cx + x1 + x2, cy - y1 - y2) || isThereAnyColor(data, cx - x1 + x2, cy + y1 - y2) || isThereAnyColor(data, cx + x1 - x2, cy - y1 + y2) || false;
 };
+var restartIfCarsTooFarAway = (level2, car12, car22) => {
+  const deltaX = Math.abs(car12.centerX - car22.centerX);
+  const deltaY = Math.abs(car12.centerY - car22.centerY);
+  if (deltaX > CAMERA_WIDTH / 2 || deltaY > CAMERA_HEIGHT / 2) {
+    car12.centerX = car22.centerX;
+    car12.centerY = car22.centerY;
+    car12.velocityX = car12.velocityY = car22.velocityX = car22.velocityY = 0;
+    console.log("teleport!");
+  }
+};
+var calculatePathProgress = (level2, car12, car22) => {
+  let closestPoint = level2.pathPoints[0];
+  let closestDistanceSquared = Number.MAX_VALUE;
+  for (const p of level2.pathPoints) {
+    const distance = distanceSquared(car12.centerX, car12.centerY, p.x, p.y);
+    if (distance < closestDistanceSquared) {
+      closestPoint = p;
+      closestDistanceSquared = distance;
+    }
+  }
+  car22.centerX = closestPoint.x;
+  car22.centerY = closestPoint.y;
+};
 
 // src/main.ts
 var gameDiv = document.getElementById("game");
@@ -173,6 +215,9 @@ var update = (time) => {
   const delta = time - previous;
   previous = time;
   updatePositionCar(level, car1, delta);
+  updatePositionCar(level, car2, delta);
+  calculatePathProgress(level, car1, car2);
+  restartIfCarsTooFarAway(level, car1, car2);
   updateVisuals(car1);
   updateVisuals(car2);
   gameDiv.scrollLeft = car1.centerX - CAMERA_WIDTH / 2;

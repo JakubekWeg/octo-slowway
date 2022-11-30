@@ -1,9 +1,15 @@
 import { GAME_HEIGHT, GAME_WIDTH } from "./constants";
 
+export interface Point {
+  x: number
+  y: number
+}
+
 export interface Level {
   obstacles: Uint8ClampedArray;
   road: Uint8ClampedArray;
   visual: HTMLCanvasElement;
+  pathPoints: Point[];
 }
 
 const getSourceFilterGroup = (content: string, name: string): string => {
@@ -64,6 +70,23 @@ const extractVisualCanvas = async (svgContent: string) => {
   return canvas;
 };
 
+const getPathPoints = (svgContent: string) => {
+  const svgDoc = new DOMParser().parseFromString(svgContent, "image/svg+xml");
+  const path = [...svgDoc.querySelectorAll(`path`)].find(e => e.getAttribute('inkscape:label') === "checkpoints")
+
+  const [_, ...steps] = path.getAttribute('d').split(' ')
+  const moveCoords = steps.map(e => e.split(',').map(e => parseFloat(e)))
+  const pathPoints: { x: number, y: number }[] = []
+  let x = 0;
+  let y = 0;
+  for (const [ox, oy] of moveCoords) {
+    x += ox
+    y += oy
+    pathPoints.push({ x, y })
+  }
+  return pathPoints
+}
+
 export const downloadLevel = async (): Promise<Level> => {
   const content = await (await fetch("./level.svg")).text();
 
@@ -71,6 +94,7 @@ export const downloadLevel = async (): Promise<Level> => {
     obstacles: await extractTextureData(content, "obstacles"),
     road: await extractTextureData(content, "road"),
     visual: await extractVisualCanvas(content),
+    pathPoints: getPathPoints(content),
   };
 };
 export const isThereAnyColor = (

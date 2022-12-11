@@ -331,9 +331,14 @@ var startLevel = (stats) => {
   const clock = new Clock();
   clock.uiElement = document.getElementById("time-car1");
   let previous = performance.now();
+  let paused = false;
   const update = (time) => {
     const delta = time - previous;
     previous = time;
+    if (paused) {
+      requestAnimationFrame(update);
+      return;
+    }
     updatePositionCar(level, car1, delta, { x: car2.centerX, y: car2.centerY });
     updatePositionCar(level, car2, delta, { x: car1.centerX, y: car1.centerY });
     calculatePathProgress(gameDiv, level, car1, car2);
@@ -342,6 +347,7 @@ var startLevel = (stats) => {
     updateVisuals(car2);
     updateCameraPosition(gameDiv, car1, car2);
     if (car1.crashed || car2.crashed || restartedCars) {
+      paused = null;
       clock.pause();
       if (restartedCars)
         document.getElementById("replay-text").style.display = "";
@@ -360,6 +366,7 @@ var startLevel = (stats) => {
       }, 2e3);
       setTimeout(() => {
         clock.start();
+        paused = false;
         requestAnimationFrame(update);
       }, 3e3);
     } else if (gameIsOver(level)) {
@@ -399,6 +406,15 @@ var startLevel = (stats) => {
       case "KeyA":
         car2.left = pressed;
         break;
+    }
+    if (!pressed && (key === "KeyP" || key === "Escape")) {
+      if (paused === false) {
+        paused = true;
+        document.getElementById("pause-text").style.display = "";
+      } else if (key !== "Escape" && paused === true) {
+        paused = false;
+        document.getElementById("pause-text").style.display = "none";
+      }
     }
   };
   document.body.addEventListener(

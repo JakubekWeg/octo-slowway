@@ -22,9 +22,14 @@ const startLevel = (stats: CarStats) => {
   const clock = new Clock()
   clock.uiElement = document.getElementById('time-car1')
   let previous = performance.now();
+  let paused: boolean | null = false
   const update = (time: number) => {
     const delta = time - previous;
     previous = time;
+    if (paused) {
+      requestAnimationFrame(update)
+      return
+    }
 
     updatePositionCar(level, car1, delta, { x: car2.centerX, y: car2.centerY });
     updatePositionCar(level, car2, delta, { x: car1.centerX, y: car1.centerY });
@@ -37,6 +42,7 @@ const startLevel = (stats: CarStats) => {
 
     updateCameraPosition(gameDiv, car1, car2)
     if (car1.crashed || car2.crashed || restartedCars) {
+      paused = null
       clock.pause()
       if (restartedCars)
         document.getElementById('replay-text').style.display = ''
@@ -55,6 +61,7 @@ const startLevel = (stats: CarStats) => {
       }, 2000);
       setTimeout(() => {
         clock.start()
+        paused = false
         requestAnimationFrame(update);
       }, 3000);
     }
@@ -99,6 +106,17 @@ const startLevel = (stats: CarStats) => {
         car2.left = pressed;
         break;
     }
+
+    if (!pressed && (key === 'KeyP' || key === 'Escape')) {
+      if (paused === false) {
+        paused = true
+        document.getElementById('pause-text').style.display = ''
+      }
+      else if (key !== 'Escape' && paused === true) {
+        paused = false
+        document.getElementById('pause-text').style.display = 'none'
+      }
+    }
   };
 
   document.body.addEventListener("keydown", (event) =>
@@ -141,3 +159,5 @@ for (const option of document.getElementsByClassName('option')) {
     }
   })
 }
+
+// lap, 

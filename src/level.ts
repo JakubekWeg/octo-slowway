@@ -10,6 +10,7 @@ export interface Level {
   road: Uint8ClampedArray;
   visual: HTMLCanvasElement;
   pathPoints: Point[];
+  lastCheckpointReachedIndex: number
 }
 
 const getSourceFilterGroup = (content: string, name: string): string => {
@@ -95,6 +96,7 @@ export const downloadLevel = async (): Promise<Level> => {
     road: await extractTextureData(content, "road"),
     visual: await extractVisualCanvas(content),
     pathPoints: getPathPoints(content),
+    lastCheckpointReachedIndex: -1,
   };
 };
 export const isThereAnyColor = (

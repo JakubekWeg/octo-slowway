@@ -103,27 +103,76 @@ export const restartIfCarsTooFarAway = (level: Level, car1: Car, car2: Car) => {
   const deltaY = Math.abs(car1.centerY - car2.centerY)
 
 
-  if (deltaX > CAMERA_WIDTH / 2 || deltaY > CAMERA_HEIGHT / 2) {
-    car1.centerX = car2.centerX
-    car1.centerY = car2.centerY
-    car1.velocityX = car1.velocityY = car2.velocityX = car2.velocityY = 0
-    console.log('teleport!');
+  if (deltaX > CAMERA_WIDTH || deltaY > CAMERA_HEIGHT) {
+    const checkpointLocation = level.pathPoints[level.lastCheckpointReachedIndex]
+    const nextCheckpointLocation = level.pathPoints[level.lastCheckpointReachedIndex + 1]
+    let rotateToNextCheckpointAngleDegrees = 0
+    if (nextCheckpointLocation) {
+      const differenceX = nextCheckpointLocation.x - checkpointLocation.x
+      const differenceY = -(nextCheckpointLocation.y - checkpointLocation.y)
 
+      const radians = Math.atan2(differenceY, differenceX)
+
+      rotateToNextCheckpointAngleDegrees = (-radians + Math.PI / 2)
+      car1.rotation = car2.rotation = rotateToNextCheckpointAngleDegrees
+    }
+
+    const matrix = new DOMMatrix(`rotate(${rotateToNextCheckpointAngleDegrees || 0}rad) translate(${CAR_WIDTH}px, 0)`)
+    const car1Point = matrix.transformPoint(new DOMPoint(0, 0))
+    car1.centerX = car1Point.x + checkpointLocation.x
+    car1.centerY = car1Point.y + checkpointLocation.y
+
+    const car2Point = matrix.transformPoint(new DOMPoint(0, 0))
+    car2.centerX = -car2Point.x + checkpointLocation.x
+    car2.centerY = -car2Point.y + checkpointLocation.y
+
+    car1.velocityX = car1.velocityY = car2.velocityX = car2.velocityY = 0
   }
 }
 
+export const updateCheckpointForCar = (level: Level, car: Car) => {
+  const lastPoint = level.pathPoints[car.lastCheckpointIndex]
+  const nextPoint = level.pathPoints[car.lastCheckpointIndex + 1]
 
-export const calculatePathProgress = (level: Level, car1: Car, car2: Car) => {
-  let closestPoint = level.pathPoints[0]
-  let closestDistanceSquared = Number.MAX_VALUE
-  for (const p of level.pathPoints) {
-    const distance = distanceSquared(car1.centerX, car1.centerY, p.x, p.y)
-    if (distance < closestDistanceSquared) {
-      closestPoint = p
-      closestDistanceSquared = distance
-    }
+  if (!nextPoint) return
+
+  if (distanceSquared(car.centerX, car.centerY, nextPoint.x, nextPoint.y) < distanceSquared(car.centerX, car.centerY, lastPoint.x, lastPoint.y)) {
+    car.lastCheckpointIndex = car.lastCheckpointIndex + 1
   }
+}
 
-  car2.centerX = closestPoint.x
-  car2.centerY = closestPoint.y
+export const calculatePathProgress = (gameDiv: HTMLElement, level: Level, car1: Car, car2: Car) => {
+  updateCheckpointForCar(level, car1)
+  updateCheckpointForCar(level, car2)
+
+  const sharedCheckpointIndex = Math.min(car1.lastCheckpointIndex, car2.lastCheckpointIndex)
+
+  if (level.lastCheckpointReachedIndex !== sharedCheckpointIndex) {
+    level.lastCheckpointReachedIndex = sharedCheckpointIndex
+
+    for (const element of document.getElementsByClassName('checkpoint')) {
+      element.classList.remove('active')
+      element.classList.add('inactive')
+    }
+
+    const checkpoint = document.createElement('div')
+    checkpoint.classList.add('checkpoint')
+    const point = level.pathPoints[sharedCheckpointIndex]
+    checkpoint.style.setProperty('--x', `${point.x}px`)
+    checkpoint.style.setProperty('--y', `${point.y}px`)
+    gameDiv.appendChild(checkpoint)
+
+    requestAnimationFrame(() => {
+      checkpoint.classList.toggle('active')
+    })
+  }
+}
+
+export const updateCameraPosition = (gameDiv: HTMLElement, car1: Car, car2: Car) => {
+
+  const cameraCenterX = (car1.centerX + car2.centerX) / 2;
+  const cameraCenterY = (car1.centerY + car2.centerY) / 2;
+
+  gameDiv.scrollLeft = cameraCenterX - CAMERA_WIDTH / 2;
+  gameDiv.scrollTop = cameraCenterY - CAMERA_HEIGHT / 2;
 }

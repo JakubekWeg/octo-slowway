@@ -1,8 +1,8 @@
 // src/constants.ts
 var GAME_WIDTH = 5e3;
 var GAME_HEIGHT = 4e3;
-var CAR_WIDTH = 40;
-var CAR_HEIGHT = 80;
+var CAR_WIDTH = 30;
+var CAR_HEIGHT = 30;
 var CAMERA_WIDTH = 700;
 var CAMERA_HEIGHT = 700;
 var CAR_ACCELERATION_ROAD = 25e-4;
@@ -35,7 +35,8 @@ var createCar = (x, y, color, root) => {
     gasPressed: false,
     breakPressed: false,
     right: false,
-    left: false
+    left: false,
+    lastCheckpointIndex: 0
   };
 };
 var updateVisuals = (car) => {
@@ -111,7 +112,8 @@ var downloadLevel = async () => {
     obstacles: await extractTextureData(content, "obstacles"),
     road: await extractTextureData(content, "road"),
     visual: await extractVisualCanvas(content),
-    pathPoints: getPathPoints(content)
+    pathPoints: getPathPoints(content),
+    lastCheckpointReachedIndex: -1
   };
 };
 var isThereAnyColor = (data, x, y) => {
@@ -181,25 +183,62 @@ var checkCarPosition = (data, cx, cy, angle) => {
 var restartIfCarsTooFarAway = (level2, car12, car22) => {
   const deltaX = Math.abs(car12.centerX - car22.centerX);
   const deltaY = Math.abs(car12.centerY - car22.centerY);
-  if (deltaX > CAMERA_WIDTH / 2 || deltaY > CAMERA_HEIGHT / 2) {
-    car12.centerX = car22.centerX;
-    car12.centerY = car22.centerY;
+  if (deltaX > CAMERA_WIDTH || deltaY > CAMERA_HEIGHT) {
+    const checkpointLocation = level2.pathPoints[level2.lastCheckpointReachedIndex];
+    const nextCheckpointLocation = level2.pathPoints[level2.lastCheckpointReachedIndex + 1];
+    let rotateToNextCheckpointAngleDegrees = 0;
+    if (nextCheckpointLocation) {
+      const differenceX = nextCheckpointLocation.x - checkpointLocation.x;
+      const differenceY = -(nextCheckpointLocation.y - checkpointLocation.y);
+      const radians = Math.atan2(differenceY, differenceX);
+      rotateToNextCheckpointAngleDegrees = -radians + Math.PI / 2;
+      car12.rotation = car22.rotation = rotateToNextCheckpointAngleDegrees;
+    }
+    const matrix = new DOMMatrix(`rotate(${rotateToNextCheckpointAngleDegrees || 0}rad) translate(${CAR_WIDTH}px, 0)`);
+    const car1Point = matrix.transformPoint(new DOMPoint(0, 0));
+    car12.centerX = car1Point.x + checkpointLocation.x;
+    car12.centerY = car1Point.y + checkpointLocation.y;
+    const car2Point = matrix.transformPoint(new DOMPoint(0, 0));
+    car22.centerX = -car2Point.x + checkpointLocation.x;
+    car22.centerY = -car2Point.y + checkpointLocation.y;
     car12.velocityX = car12.velocityY = car22.velocityX = car22.velocityY = 0;
-    console.log("teleport!");
   }
 };
-var calculatePathProgress = (level2, car12, car22) => {
-  let closestPoint = level2.pathPoints[0];
-  let closestDistanceSquared = Number.MAX_VALUE;
-  for (const p of level2.pathPoints) {
-    const distance = distanceSquared(car12.centerX, car12.centerY, p.x, p.y);
-    if (distance < closestDistanceSquared) {
-      closestPoint = p;
-      closestDistanceSquared = distance;
-    }
+var updateCheckpointForCar = (level2, car) => {
+  const lastPoint = level2.pathPoints[car.lastCheckpointIndex];
+  const nextPoint = level2.pathPoints[car.lastCheckpointIndex + 1];
+  if (!nextPoint)
+    return;
+  if (distanceSquared(car.centerX, car.centerY, nextPoint.x, nextPoint.y) < distanceSquared(car.centerX, car.centerY, lastPoint.x, lastPoint.y)) {
+    car.lastCheckpointIndex = car.lastCheckpointIndex + 1;
   }
-  car22.centerX = closestPoint.x;
-  car22.centerY = closestPoint.y;
+};
+var calculatePathProgress = (gameDiv2, level2, car12, car22) => {
+  updateCheckpointForCar(level2, car12);
+  updateCheckpointForCar(level2, car22);
+  const sharedCheckpointIndex = Math.min(car12.lastCheckpointIndex, car22.lastCheckpointIndex);
+  if (level2.lastCheckpointReachedIndex !== sharedCheckpointIndex) {
+    level2.lastCheckpointReachedIndex = sharedCheckpointIndex;
+    for (const element of document.getElementsByClassName("checkpoint")) {
+      element.classList.remove("active");
+      element.classList.add("inactive");
+    }
+    const checkpoint = document.createElement("div");
+    checkpoint.classList.add("checkpoint");
+    const point = level2.pathPoints[sharedCheckpointIndex];
+    checkpoint.style.setProperty("--x", `${point.x}px`);
+    checkpoint.style.setProperty("--y", `${point.y}px`);
+    gameDiv2.appendChild(checkpoint);
+    requestAnimationFrame(() => {
+      checkpoint.classList.toggle("active");
+    });
+  }
+};
+var updateCameraPosition = (gameDiv2, car12, car22) => {
+  const cameraCenterX = (car12.centerX + car22.centerX) / 2;
+  const cameraCenterY = (car12.centerY + car22.centerY) / 2;
+  gameDiv2.scrollLeft = cameraCenterX - CAMERA_WIDTH / 2;
+  gameDiv2.scrollTop = cameraCenterY - CAMERA_HEIGHT / 2;
 };
 
 // src/main.ts
@@ -209,19 +248,18 @@ gameDiv.style.setProperty("--height", `${CAMERA_HEIGHT}px`);
 var level = await downloadLevel();
 gameDiv.appendChild(level.visual);
 var car1 = createCar(100, 50, "green", gameDiv);
-var car2 = createCar(50, 50, "blue", gameDiv);
+var car2 = createCar(5e3, 50, "blue", gameDiv);
 var previous = performance.now();
 var update = (time) => {
   const delta = time - previous;
   previous = time;
   updatePositionCar(level, car1, delta);
   updatePositionCar(level, car2, delta);
-  calculatePathProgress(level, car1, car2);
+  calculatePathProgress(gameDiv, level, car1, car2);
   restartIfCarsTooFarAway(level, car1, car2);
   updateVisuals(car1);
   updateVisuals(car2);
-  gameDiv.scrollLeft = car1.centerX - CAMERA_WIDTH / 2;
-  gameDiv.scrollTop = car1.centerY - CAMERA_HEIGHT / 2;
+  updateCameraPosition(gameDiv, car1, car2);
   requestAnimationFrame(update);
 };
 requestAnimationFrame(update);

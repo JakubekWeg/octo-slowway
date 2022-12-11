@@ -11,6 +11,7 @@ export interface Car {
   breakPressed: boolean;
   right: boolean;
   left: boolean;
+  lastCheckpointIndex: number;
 }
 
 const createElement = (root: HTMLElement, color: string): HTMLElement => {
@@ -40,6 +41,7 @@ export const createCar = (
     breakPressed: false,
     right: false,
     left: false,
+    lastCheckpointIndex: 0,
   };
 };
 

@@ -1,7 +1,7 @@
 import { Car, createCar, updateVisuals } from "./car";
 import { CAMERA_HEIGHT, CAMERA_WIDTH } from "./constants";
 import { downloadLevel } from "./level";
-import { calculatePathProgress, restartIfCarsTooFarAway, updatePositionCar } from "./physics";
+import { calculatePathProgress, restartIfCarsTooFarAway, updateCameraPosition, updatePositionCar } from "./physics";
 
 const gameDiv = document.getElementById("game");
 gameDiv.style.setProperty("--width", `${CAMERA_WIDTH}px`);
@@ -10,7 +10,7 @@ const level = await downloadLevel();
 gameDiv.appendChild(level.visual);
 
 const car1: Car = createCar(100, 50, "green", gameDiv);
-const car2: Car = createCar(50, 50, "blue", gameDiv);
+const car2: Car = createCar(5000, 50, "blue", gameDiv);
 
 let previous = performance.now();
 const update = (time: number) => {
@@ -20,14 +20,13 @@ const update = (time: number) => {
   updatePositionCar(level, car1, delta);
   updatePositionCar(level, car2, delta);
 
-  calculatePathProgress(level, car1, car2)
+  calculatePathProgress(gameDiv, level, car1, car2)
   restartIfCarsTooFarAway(level, car1, car2)
 
   updateVisuals(car1);
   updateVisuals(car2);
 
-  gameDiv.scrollLeft = car1.centerX - CAMERA_WIDTH / 2;
-  gameDiv.scrollTop = car1.centerY - CAMERA_HEIGHT / 2;
+  updateCameraPosition(gameDiv, car1, car2)
 
   requestAnimationFrame(update);
 };

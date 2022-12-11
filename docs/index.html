@@ -14,8 +14,26 @@
       canvas {
         image-rendering: pixelated;
       }
+      #game-container {
+        display: grid;
+        position: relative;
+        place-items: center;
+        width: var(--width);
+        height: var(--height);
+      }
+      #game-container > * {
+        position: absolute;
+      }
+      #replay-text,
+      #crash-text {
+        text-align: center;
+        color: white;
+        background-color: #22222288;
+        padding: 16px;
+      }
       #game {
-        display: inline-block;
+        display: grid;
+        place-items: center;
         position: relative;
         margin: 8px;
         width: var(--width);
@@ -62,6 +80,15 @@
     </style>
   </head>
   <body>
-    <div id="game"></div>
+    <div id="game-container">
+      <div id="game"></div>
+      <p id="crash-text" style="display: none">
+        REPLAY<br /><span id="crashed-player-id">someone</span> crashed their
+        car
+      </p>
+      <p id="replay-text" style="display: none">
+        REPLAY<br />Cars were too far
+      </p>
+    </div>
   </body>
 </html>

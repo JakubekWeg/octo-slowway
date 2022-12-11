@@ -5,14 +5,6 @@ var CAR_WIDTH = 32;
 var CAR_HEIGHT = 32;
 var CAMERA_WIDTH = 720;
 var CAMERA_HEIGHT = 405;
-var CAR_ACCELERATION_ROAD = 25e-4;
-var CAR_ACCELERATION_GROUND = 25e-4;
-var CAR_GRIP_PERCENTAGE_ROAD = 0.6;
-var CAR_GRIP_PERCENTAGE_GROUND = 0.3;
-var DRAG_ROAD = 4e-3;
-var DRAG_GROUND = 0.01;
-var TURN_SPEED_ROAD = 2e-3;
-var TURN_SPEED_GROUND = 2e-3;
 
 // src/car.ts
 var createElement = (root, color) => {
@@ -24,7 +16,7 @@ var createElement = (root, color) => {
   root.appendChild(car);
   return car;
 };
-var createCar = (x, y, color, root) => {
+var createCar = (stats2, x, y, color, root) => {
   return {
     element: createElement(root, color),
     centerX: x,
@@ -37,7 +29,8 @@ var createCar = (x, y, color, root) => {
     right: false,
     left: false,
     crashed: false,
-    lastCheckpointIndex: 0
+    lastCheckpointIndex: 0,
+    stats: stats2
   };
 };
 var updateVisuals = (car) => {
@@ -136,17 +129,17 @@ var updatePositionCar = (level2, car, delta, otherCarPosition) => {
     car.centerY,
     car.rotation
   );
-  const grip = isOnRoad ? CAR_GRIP_PERCENTAGE_ROAD : CAR_GRIP_PERCENTAGE_GROUND;
-  car.velocityX -= car.velocityX * (isOnRoad ? DRAG_ROAD : DRAG_GROUND) * delta * (1 - Math.abs(Math.sin(-car.rotation)) * grip);
-  car.velocityY -= car.velocityY * (isOnRoad ? DRAG_ROAD : DRAG_GROUND) * delta * (1 - Math.abs(Math.cos(-car.rotation)) * grip);
-  const acceleration = isOnRoad ? CAR_ACCELERATION_ROAD : CAR_ACCELERATION_GROUND;
+  const grip = isOnRoad ? car.stats.gripRoad : car.stats.gripGround;
+  car.velocityX -= car.velocityX * (isOnRoad ? car.stats.dragRoad : car.stats.dragGround) * delta * (1 - Math.abs(Math.sin(-car.rotation)) * grip);
+  car.velocityY -= car.velocityY * (isOnRoad ? car.stats.dragRoad : car.stats.dragGround) * delta * (1 - Math.abs(Math.cos(-car.rotation)) * grip);
+  const acceleration = isOnRoad ? car.stats.accelerationRoad : car.stats.accelerationGround;
   let addedAcceleration = 0;
   if (car.gasPressed)
     addedAcceleration += acceleration * delta;
   if (car.breakPressed)
     addedAcceleration -= acceleration * delta;
   let newRotation = car.rotation;
-  const turnSpeed = isOnRoad ? TURN_SPEED_ROAD : TURN_SPEED_GROUND;
+  const turnSpeed = car.stats.turnSpeed;
   const currentVelocity = Math.sqrt(
     car.velocityX * car.velocityX + car.velocityY * car.velocityY
   );
@@ -191,7 +184,9 @@ var restartIfCarsTooFarAway = (level2, car12, car22) => {
   const deltaY = Math.abs(car12.centerY - car22.centerY);
   if (deltaX > CAMERA_WIDTH || deltaY > CAMERA_HEIGHT) {
     restartCarsFromCheckpoints(level2, car12, car22);
+    return true;
   }
+  return false;
 };
 var updateCheckpointForCar = (level2, car) => {
   const lastPoint = level2.pathPoints[car.lastCheckpointIndex];
@@ -254,12 +249,21 @@ var restartCarsFromCheckpoints = (level2, car12, car22) => {
 
 // src/main.ts
 var gameDiv = document.getElementById("game");
-gameDiv.style.setProperty("--width", `${CAMERA_WIDTH}px`);
-gameDiv.style.setProperty("--height", `${CAMERA_HEIGHT}px`);
+document.getElementById("game-container").style.setProperty("--width", `${CAMERA_WIDTH}px`);
+document.getElementById("game-container").style.setProperty("--height", `${CAMERA_HEIGHT}px`);
 var level = await downloadLevel();
 gameDiv.appendChild(level.visual);
-var car1 = createCar(100, 50, "yellow", gameDiv);
-var car2 = createCar(5e3, 50, "blue", gameDiv);
+var stats = {
+  dragRoad: 4e-3,
+  dragGround: 0.01,
+  gripRoad: 0.6,
+  gripGround: 0.3,
+  accelerationGround: 25e-4,
+  accelerationRoad: 25e-4,
+  turnSpeed: 2e-3
+};
+var car1 = createCar(stats, 100, 50, "yellow", gameDiv);
+var car2 = createCar(stats, 5e3, 50, "blue", gameDiv);
 var previous = performance.now();
 var update = (time) => {
   const delta = time - previous;
@@ -267,18 +271,36 @@ var update = (time) => {
   updatePositionCar(level, car1, delta, { x: car2.centerX, y: car2.centerY });
   updatePositionCar(level, car2, delta, { x: car1.centerX, y: car1.centerY });
   calculatePathProgress(gameDiv, level, car1, car2);
-  restartIfCarsTooFarAway(level, car1, car2);
+  const restartedCars = restartIfCarsTooFarAway(level, car1, car2);
   updateVisuals(car1);
   updateVisuals(car2);
   updateCameraPosition(gameDiv, car1, car2);
-  if (car1.crashed || car2.crashed)
+  if (car1.crashed || car2.crashed || restartedCars) {
+    if (restartedCars)
+      document.getElementById("replay-text").style.display = "";
+    else
+      document.getElementById("crash-text").style.display = "";
+    document.getElementById("crashed-player-id").innerText = car1.crashed ? "Player one" : "Player two";
+    setTimeout(() => {
+      document.getElementById("replay-text").style.display = "none";
+      document.getElementById("crash-text").style.display = "none";
+    }, 2500);
+    setTimeout(() => {
+      requestAnimationFrame(update);
+    }, 3e3);
     setTimeout(() => {
       restartCarsFromCheckpoints(level, car1, car2);
-      requestAnimationFrame(update);
-    }, 1e3);
-  else
+      updateVisuals(car1);
+      updateVisuals(car2);
+      updateCameraPosition(gameDiv, car1, car2);
+    }, 2e3);
+  } else
     requestAnimationFrame(update);
 };
+document.getElementById("replay-text").style.opacity = "0";
+setTimeout(() => {
+  document.getElementById("replay-text").style.opacity = "1";
+}, 3e3);
 requestAnimationFrame(update);
 var handleKey = (key, pressed) => {
   switch (key) {

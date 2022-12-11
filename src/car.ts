@@ -1,5 +1,15 @@
 import { CAR_HEIGHT, CAR_WIDTH } from "./constants";
 
+export interface CarStats {
+  dragGround: number
+  dragRoad: number
+  gripGround: number
+  gripRoad: number
+  accelerationRoad: number
+  accelerationGround: number
+  turnSpeed: number
+}
+
 export interface Car {
   element: HTMLElement;
   centerX: number;
@@ -13,6 +23,7 @@ export interface Car {
   left: boolean;
   crashed: boolean;
   lastCheckpointIndex: number;
+  stats: CarStats
 }
 
 const createElement = (root: HTMLElement, color: string): HTMLElement => {
@@ -26,6 +37,7 @@ const createElement = (root: HTMLElement, color: string): HTMLElement => {
 };
 
 export const createCar = (
+  stats: CarStats,
   x: number,
   y: number,
   color: string,
@@ -44,6 +56,7 @@ export const createCar = (
     left: false,
     crashed: false,
     lastCheckpointIndex: 0,
+    stats,
   };
 };
 

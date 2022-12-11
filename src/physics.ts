@@ -2,16 +2,8 @@ import { Car } from "./car";
 import {
   CAMERA_HEIGHT,
   CAMERA_WIDTH,
-  CAR_ACCELERATION_GROUND,
-  CAR_ACCELERATION_ROAD,
-  CAR_GRIP_PERCENTAGE_GROUND,
-  CAR_GRIP_PERCENTAGE_ROAD,
   CAR_HEIGHT,
   CAR_WIDTH,
-  DRAG_GROUND,
-  DRAG_ROAD,
-  TURN_SPEED_GROUND,
-  TURN_SPEED_ROAD
 } from "./constants";
 import { isThereAnyColor, Level, Point } from "./level";
 
@@ -27,21 +19,21 @@ export const updatePositionCar = (level: Level, car: Car, delta: number, otherCa
     car.rotation
   );
 
-  const grip = isOnRoad ? CAR_GRIP_PERCENTAGE_ROAD : CAR_GRIP_PERCENTAGE_GROUND;
+  const grip = isOnRoad ? car.stats.gripRoad : car.stats.gripGround;
   car.velocityX -=
     car.velocityX *
-    (isOnRoad ? DRAG_ROAD : DRAG_GROUND) *
+    (isOnRoad ? car.stats.dragRoad : car.stats.dragGround) *
     delta *
     (1 - Math.abs(Math.sin(-car.rotation)) * grip);
   car.velocityY -=
     car.velocityY *
-    (isOnRoad ? DRAG_ROAD : DRAG_GROUND) *
+    (isOnRoad ? car.stats.dragRoad : car.stats.dragGround) *
     delta *
     (1 - Math.abs(Math.cos(-car.rotation)) * grip);
 
   const acceleration = isOnRoad
-    ? CAR_ACCELERATION_ROAD
-    : CAR_ACCELERATION_GROUND;
+    ? car.stats.accelerationRoad
+    : car.stats.accelerationGround;
 
   let addedAcceleration = 0;
 
@@ -49,7 +41,7 @@ export const updatePositionCar = (level: Level, car: Car, delta: number, otherCa
   if (car.breakPressed) addedAcceleration -= acceleration * delta;
 
   let newRotation = car.rotation;
-  const turnSpeed = isOnRoad ? TURN_SPEED_ROAD : TURN_SPEED_GROUND;
+  const turnSpeed = car.stats.turnSpeed
   const currentVelocity = Math.sqrt(
     car.velocityX * car.velocityX + car.velocityY * car.velocityY
   );
@@ -106,14 +98,15 @@ const checkIfCarsTooNear = (
   return distanceSquared(a.x, a.y, b.x, b.y) < CAR_WIDTH * CAR_HEIGHT;
 };
 
-export const restartIfCarsTooFarAway = (level: Level, car1: Car, car2: Car) => {
+export const restartIfCarsTooFarAway = (level: Level, car1: Car, car2: Car): boolean => {
   const deltaX = Math.abs(car1.centerX - car2.centerX)
   const deltaY = Math.abs(car1.centerY - car2.centerY)
 
-
   if (deltaX > CAMERA_WIDTH || deltaY > CAMERA_HEIGHT) {
     restartCarsFromCheckpoints(level, car1, car2);
+    return true
   }
+  return false
 }
 
 export const updateCheckpointForCar = (level: Level, car: Car) => {

@@ -41,6 +41,7 @@ const extractTextureData = async (svgContent: string, groupName: string) => {
   canvas.height = (GAME_HEIGHT / TEXTURE_DATA_DIVISOR) | 0;
 
   const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false
   ctx.drawImage(
     img,
     0,

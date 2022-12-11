@@ -7,9 +7,12 @@
     <title>Document</title>
     <script src="./bundle.js" type="module"></script>
     <style>
+      html {
+        background-color: black;
+      }
       body {
         margin: 0;
-        background-color: black;
+        display: inline-block;
       }
       canvas {
         image-rendering: pixelated;
@@ -35,7 +38,6 @@
         display: grid;
         place-items: center;
         position: relative;
-        margin: 8px;
         width: var(--width);
         height: var(--height);
         box-sizing: border-box;
@@ -77,6 +79,50 @@
         --scale: 2;
         opacity: 0.4;
       }
+      #time-bar {
+        padding: 4px 32px;
+        background-color: #999;
+      }
+      #menu {
+        display: grid;
+        place-items: center;
+        text-align: center;
+        background-color: black;
+        width: var(--width);
+        height: var(--height);
+        color: white;
+      }
+      .option {
+        padding: 4px;
+        text-align: left;
+        display: block;
+        cursor: pointer;
+      }
+      .option.palegreen {
+        background-color: rgb(95, 247, 95);
+        color: rgb(47, 143, 47);
+      }
+      .option.palegreen.selected {
+        color: rgb(209, 240, 209);
+      }
+      .option.purple {
+        background-color: purple;
+        color: rgb(74, 0, 74);
+      }
+      .option.purple.selected {
+        color: rgb(225, 167, 225);
+      }
+      .option.green {
+        background-color: green;
+        color: rgb(0, 61, 0);
+      }
+      .option.green.selected {
+        color: rgb(174, 218, 174);
+      }
+      .option.orange {
+        background-color: rgb(218, 133, 42);
+        color: rgb(99, 64, 0);
+      }
     </style>
   </head>
   <body>
@@ -89,6 +135,29 @@
       <p id="replay-text" style="display: none">
         REPLAY<br />Cars were too far
       </p>
+      <div id="menu">
+        <div>
+          <div class="option separator"></div>
+          <div class="option roads palegreen selected">DRY ROADS</div>
+          <div class="option roads palegreen">WET ROADS</div>
+          <div class="option roads palegreen">ICY ROADS</div>
+          <div class="option separator"></div>
+          <div class="option speed purple selected">FASTEST TOP SPEED</div>
+          <div class="option speed purple">FASTER TOP SPEED</div>
+          <div class="option speed purple">FAST TOP SPEED</div>
+          <div class="option speed purple">NORMAL TOP SPEED</div>
+          <div class="option separator"></div>
+          <div class="option acceleration green">SLOW ACCELERATION</div>
+          <div class="option acceleration green selected">
+            NORMAL ACCELERATION
+          </div>
+          <div class="option acceleration green">FAST ACCELERATION</div>
+          <div class="option separator"></div>
+          <div class="option start orange">START</div>
+          <div class="option separator"></div>
+        </div>
+      </div>
     </div>
+    <div id="time-bar">TIME: <span id="time-car1">00:00</span></div>
   </body>
 </html>

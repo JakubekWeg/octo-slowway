@@ -16,7 +16,7 @@ var createElement = (root, color) => {
   root.appendChild(car);
   return car;
 };
-var createCar = (stats2, x, y, color, root) => {
+var createCar = (stats, x, y, color, root) => {
   return {
     element: createElement(root, color),
     centerX: x,
@@ -30,13 +30,45 @@ var createCar = (stats2, x, y, color, root) => {
     left: false,
     crashed: false,
     lastCheckpointIndex: 0,
-    stats: stats2
+    stats
   };
 };
 var updateVisuals = (car) => {
   car.element.style.setProperty("--x", `${car.centerX.toFixed(2)}px`);
   car.element.style.setProperty("--y", `${car.centerY.toFixed(2)}px`);
   car.element.style.setProperty("--angle", `${car.rotation.toFixed(2)}rad`);
+};
+
+// src/clock.ts
+var Clock = class {
+  totalTime = 0;
+  startTime = 0;
+  timerId;
+  uiElement;
+  start() {
+    this.startTime = performance.now();
+    clearInterval(this.timerId);
+    this.timerId = setInterval(() => {
+      this.updateUI();
+    }, 260);
+  }
+  getElapsedSeconds() {
+    return Math.round((this.timerId !== void 0 ? this.totalTime + performance.now() - this.startTime : this.totalTime) / 1e3);
+  }
+  pause() {
+    this.totalTime += performance.now() - this.startTime;
+    clearInterval(this.timerId);
+    this.timerId = void 0;
+    this.updateUI();
+  }
+  updateUI() {
+    if (this.uiElement) {
+      const total = this.getElapsedSeconds();
+      const seconds = total % 60 | 0;
+      const minutes = total / 60 | 0;
+      this.uiElement.innerText = `${minutes < 10 ? "0" + minutes : minutes}:${seconds < 10 ? "0" + seconds : seconds}`;
+    }
+  }
 };
 
 // src/level.ts
@@ -60,6 +92,7 @@ var extractTextureData = async (svgContent, groupName) => {
   canvas.width = GAME_WIDTH / TEXTURE_DATA_DIVISOR | 0;
   canvas.height = GAME_HEIGHT / TEXTURE_DATA_DIVISOR | 0;
   const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
   ctx.drawImage(
     img,
     0,
@@ -179,11 +212,11 @@ var checkIfInObstacle = (data, cx, cy, angle) => {
 var checkIfCarsTooNear = (a, b) => {
   return distanceSquared(a.x, a.y, b.x, b.y) < CAR_WIDTH * CAR_HEIGHT;
 };
-var restartIfCarsTooFarAway = (level2, car12, car22) => {
-  const deltaX = Math.abs(car12.centerX - car22.centerX);
-  const deltaY = Math.abs(car12.centerY - car22.centerY);
+var restartIfCarsTooFarAway = (level2, car1, car2) => {
+  const deltaX = Math.abs(car1.centerX - car2.centerX);
+  const deltaY = Math.abs(car1.centerY - car2.centerY);
   if (deltaX > CAMERA_WIDTH || deltaY > CAMERA_HEIGHT) {
-    restartCarsFromCheckpoints(level2, car12, car22);
+    restartCarsFromCheckpoints(level2, car1, car2);
     return true;
   }
   return false;
@@ -197,10 +230,10 @@ var updateCheckpointForCar = (level2, car) => {
     car.lastCheckpointIndex = car.lastCheckpointIndex + 1;
   }
 };
-var calculatePathProgress = (gameDiv2, level2, car12, car22) => {
-  updateCheckpointForCar(level2, car12);
-  updateCheckpointForCar(level2, car22);
-  const sharedCheckpointIndex = Math.min(car12.lastCheckpointIndex, car22.lastCheckpointIndex);
+var calculatePathProgress = (gameDiv2, level2, car1, car2) => {
+  updateCheckpointForCar(level2, car1);
+  updateCheckpointForCar(level2, car2);
+  const sharedCheckpointIndex = Math.min(car1.lastCheckpointIndex, car2.lastCheckpointIndex);
   if (level2.lastCheckpointReachedIndex !== sharedCheckpointIndex) {
     level2.lastCheckpointReachedIndex = sharedCheckpointIndex;
     for (const element of document.getElementsByClassName("checkpoint")) {
@@ -218,14 +251,14 @@ var calculatePathProgress = (gameDiv2, level2, car12, car22) => {
     });
   }
 };
-var updateCameraPosition = (gameDiv2, car12, car22) => {
-  const cameraCenterX = (car12.centerX + car22.centerX) / 2;
-  const cameraCenterY = (car12.centerY + car22.centerY) / 2;
+var updateCameraPosition = (gameDiv2, car1, car2) => {
+  const cameraCenterX = (car1.centerX + car2.centerX) / 2;
+  const cameraCenterY = (car1.centerY + car2.centerY) / 2;
   gameDiv2.scrollLeft = cameraCenterX - CAMERA_WIDTH / 2;
   gameDiv2.scrollTop = cameraCenterY - CAMERA_HEIGHT / 2;
 };
-var restartCarsFromCheckpoints = (level2, car12, car22) => {
-  car12.crashed = car22.crashed = false;
+var restartCarsFromCheckpoints = (level2, car1, car2) => {
+  car1.crashed = car2.crashed = false;
   const checkpointLocation = level2.pathPoints[level2.lastCheckpointReachedIndex];
   const nextCheckpointLocation = level2.pathPoints[level2.lastCheckpointReachedIndex + 1];
   let rotateToNextCheckpointAngleDegrees = 0;
@@ -234,17 +267,47 @@ var restartCarsFromCheckpoints = (level2, car12, car22) => {
     const differenceY = -(nextCheckpointLocation.y - checkpointLocation.y);
     const radians = Math.atan2(differenceY, differenceX);
     rotateToNextCheckpointAngleDegrees = -radians + Math.PI / 2;
-    car12.rotation = car22.rotation = rotateToNextCheckpointAngleDegrees;
+    car1.rotation = car2.rotation = rotateToNextCheckpointAngleDegrees;
   }
   const matrix = new DOMMatrix(`rotate(${rotateToNextCheckpointAngleDegrees || 0}rad) translate(${CAR_WIDTH}px, 0)`);
   const car1Point = matrix.transformPoint(new DOMPoint(0, 0));
-  car12.centerX = car1Point.x + checkpointLocation.x;
-  car12.centerY = car1Point.y + checkpointLocation.y;
+  car1.centerX = car1Point.x + checkpointLocation.x;
+  car1.centerY = car1Point.y + checkpointLocation.y;
   const car2Point = matrix.transformPoint(new DOMPoint(0, 0));
-  car22.centerX = -car2Point.x + checkpointLocation.x;
-  car22.centerY = -car2Point.y + checkpointLocation.y;
-  car12.velocityX = car12.velocityY = car22.velocityX = car22.velocityY = 0;
-  car12.lastCheckpointIndex = car22.lastCheckpointIndex = level2.lastCheckpointReachedIndex;
+  car2.centerX = -car2Point.x + checkpointLocation.x;
+  car2.centerY = -car2Point.y + checkpointLocation.y;
+  car1.velocityX = car1.velocityY = car2.velocityX = car2.velocityY = 0;
+  car1.lastCheckpointIndex = car2.lastCheckpointIndex = level2.lastCheckpointReachedIndex;
+};
+
+// src/stats.ts
+var roadsToGrip = {
+  "dry": [0.6, 0.4],
+  "wet": [0.4, 0.15],
+  "icy": [0.015, 1e-3]
+};
+var speedToDrag = {
+  "fastest": [5e-4, 5e-3],
+  "faster": [1e-3, 8e-3],
+  "fast": [4e-3, 0.01],
+  "normal": [0.01, 0.03]
+};
+var accelerationMap = {
+  "slow": 2e-3,
+  "normal": 4e-3,
+  "fast": 55e-4
+};
+var makeStats = (roads, speed, acceleration) => {
+  const stats = {
+    dragRoad: speedToDrag[speed][0],
+    dragGround: speedToDrag[speed][1],
+    gripRoad: roadsToGrip[roads][0],
+    gripGround: roadsToGrip[roads][1],
+    accelerationGround: accelerationMap[acceleration],
+    accelerationRoad: accelerationMap[acceleration],
+    turnSpeed: 2e-3
+  };
+  return stats;
 };
 
 // src/main.ts
@@ -253,88 +316,112 @@ document.getElementById("game-container").style.setProperty("--width", `${CAMERA
 document.getElementById("game-container").style.setProperty("--height", `${CAMERA_HEIGHT}px`);
 var level = await downloadLevel();
 gameDiv.appendChild(level.visual);
-var stats = {
-  dragRoad: 4e-3,
-  dragGround: 0.01,
-  gripRoad: 0.6,
-  gripGround: 0.3,
-  accelerationGround: 25e-4,
-  accelerationRoad: 25e-4,
-  turnSpeed: 2e-3
-};
-var car1 = createCar(stats, 100, 50, "yellow", gameDiv);
-var car2 = createCar(stats, 5e3, 50, "blue", gameDiv);
-var previous = performance.now();
-var update = (time) => {
-  const delta = time - previous;
-  previous = time;
-  updatePositionCar(level, car1, delta, { x: car2.centerX, y: car2.centerY });
-  updatePositionCar(level, car2, delta, { x: car1.centerX, y: car1.centerY });
-  calculatePathProgress(gameDiv, level, car1, car2);
-  const restartedCars = restartIfCarsTooFarAway(level, car1, car2);
-  updateVisuals(car1);
-  updateVisuals(car2);
-  updateCameraPosition(gameDiv, car1, car2);
-  if (car1.crashed || car2.crashed || restartedCars) {
-    if (restartedCars)
-      document.getElementById("replay-text").style.display = "";
-    else
-      document.getElementById("crash-text").style.display = "";
-    document.getElementById("crashed-player-id").innerText = car1.crashed ? "Player one" : "Player two";
-    setTimeout(() => {
-      document.getElementById("replay-text").style.display = "none";
-      document.getElementById("crash-text").style.display = "none";
-    }, 2500);
-    setTimeout(() => {
+var startLevel = (stats) => {
+  console.log(stats);
+  const car1 = createCar(stats, 100, 50, "yellow", gameDiv);
+  const car2 = createCar(stats, 5e3, 50, "blue", gameDiv);
+  const clock = new Clock();
+  clock.uiElement = document.getElementById("time-car1");
+  let previous = performance.now();
+  const update = (time) => {
+    const delta = time - previous;
+    previous = time;
+    updatePositionCar(level, car1, delta, { x: car2.centerX, y: car2.centerY });
+    updatePositionCar(level, car2, delta, { x: car1.centerX, y: car1.centerY });
+    calculatePathProgress(gameDiv, level, car1, car2);
+    const restartedCars = restartIfCarsTooFarAway(level, car1, car2);
+    updateVisuals(car1);
+    updateVisuals(car2);
+    updateCameraPosition(gameDiv, car1, car2);
+    if (car1.crashed || car2.crashed || restartedCars) {
+      clock.pause();
+      if (restartedCars)
+        document.getElementById("replay-text").style.display = "";
+      else
+        document.getElementById("crash-text").style.display = "";
+      document.getElementById("crashed-player-id").innerText = car1.crashed ? "Player one" : "Player two";
+      setTimeout(() => {
+        document.getElementById("replay-text").style.display = "none";
+        document.getElementById("crash-text").style.display = "none";
+      }, 2500);
+      setTimeout(() => {
+        restartCarsFromCheckpoints(level, car1, car2);
+        updateVisuals(car1);
+        updateVisuals(car2);
+        updateCameraPosition(gameDiv, car1, car2);
+      }, 2e3);
+      setTimeout(() => {
+        clock.start();
+        requestAnimationFrame(update);
+      }, 3e3);
+    } else
       requestAnimationFrame(update);
-    }, 3e3);
-    setTimeout(() => {
-      restartCarsFromCheckpoints(level, car1, car2);
-      updateVisuals(car1);
-      updateVisuals(car2);
-      updateCameraPosition(gameDiv, car1, car2);
-    }, 2e3);
-  } else
-    requestAnimationFrame(update);
+  };
+  document.getElementById("replay-text").style.opacity = "0";
+  setTimeout(() => {
+    document.getElementById("replay-text").style.opacity = "1";
+  }, 3e3);
+  requestAnimationFrame(update);
+  const handleKey = (key, pressed) => {
+    switch (key) {
+      case "ArrowUp":
+        car1.gasPressed = pressed;
+        break;
+      case "ArrowDown":
+        car1.breakPressed = pressed;
+        break;
+      case "ArrowRight":
+        car1.right = pressed;
+        break;
+      case "ArrowLeft":
+        car1.left = pressed;
+        break;
+      case "KeyW":
+        car2.gasPressed = pressed;
+        break;
+      case "KeyS":
+        car2.breakPressed = pressed;
+        break;
+      case "KeyD":
+        car2.right = pressed;
+        break;
+      case "KeyA":
+        car2.left = pressed;
+        break;
+    }
+  };
+  document.body.addEventListener(
+    "keydown",
+    (event) => handleKey(event.code, true)
+  );
+  document.body.addEventListener(
+    "keyup",
+    (event) => handleKey(event.code, false)
+  );
 };
-document.getElementById("replay-text").style.opacity = "0";
-setTimeout(() => {
-  document.getElementById("replay-text").style.opacity = "1";
-}, 3e3);
-requestAnimationFrame(update);
-var handleKey = (key, pressed) => {
-  switch (key) {
-    case "ArrowUp":
-      car1.gasPressed = pressed;
-      break;
-    case "ArrowDown":
-      car1.breakPressed = pressed;
-      break;
-    case "ArrowRight":
-      car1.right = pressed;
-      break;
-    case "ArrowLeft":
-      car1.left = pressed;
-      break;
-    case "KeyW":
-      car2.gasPressed = pressed;
-      break;
-    case "KeyS":
-      car2.breakPressed = pressed;
-      break;
-    case "KeyD":
-      car2.right = pressed;
-      break;
-    case "KeyA":
-      car2.left = pressed;
-      break;
-  }
-};
-document.body.addEventListener(
-  "keydown",
-  (event) => handleKey(event.code, true)
-);
-document.body.addEventListener(
-  "keyup",
-  (event) => handleKey(event.code, false)
-);
+for (const option of document.getElementsByClassName("option")) {
+  const forRoads = option.classList.contains("roads");
+  const forSpeed = option.classList.contains("speed");
+  const forAcceleration = option.classList.contains("acceleration");
+  option.addEventListener("click", () => {
+    if (forRoads) {
+      for (const other of document.getElementsByClassName("roads"))
+        other.classList.remove("selected");
+      option.classList.add("selected");
+    } else if (forSpeed) {
+      for (const other of document.getElementsByClassName("speed"))
+        other.classList.remove("selected");
+      option.classList.add("selected");
+    } else if (forAcceleration) {
+      for (const other of document.getElementsByClassName("acceleration"))
+        other.classList.remove("selected");
+      option.classList.add("selected");
+    } else if (option.classList.contains("start")) {
+      const roads = document.querySelector(".selected.option.roads").textContent.trim().split(" ")[0].toLowerCase();
+      const speed = document.querySelector(".selected.option.speed").textContent.trim().split(" ")[0].toLowerCase();
+      const acceleration = document.querySelector(".selected.option.acceleration").textContent.trim().split(" ")[0].toLowerCase();
+      document.getElementById("menu").remove();
+      startLevel(makeStats(roads, speed, acceleration));
+    }
+  });
+}

@@ -1,10 +1,10 @@
 // src/constants.ts
 var GAME_WIDTH = 5e3;
 var GAME_HEIGHT = 4e3;
-var CAR_WIDTH = 30;
-var CAR_HEIGHT = 30;
-var CAMERA_WIDTH = 700;
-var CAMERA_HEIGHT = 700;
+var CAR_WIDTH = 32;
+var CAR_HEIGHT = 32;
+var CAMERA_WIDTH = 720;
+var CAMERA_HEIGHT = 405;
 var CAR_ACCELERATION_ROAD = 25e-4;
 var CAR_ACCELERATION_GROUND = 25e-4;
 var CAR_GRIP_PERCENTAGE_ROAD = 0.6;
@@ -20,7 +20,7 @@ var createElement = (root, color) => {
   car.classList.add("car");
   car.style.setProperty("--width", `${CAR_WIDTH.toFixed(2)}px`);
   car.style.setProperty("--height", `${CAR_HEIGHT.toFixed(2)}px`);
-  car.style.backgroundColor = color;
+  car.style.background = `url("car-${color}.png")`;
   root.appendChild(car);
   return car;
 };
@@ -36,6 +36,7 @@ var createCar = (x, y, color, root) => {
     breakPressed: false,
     right: false,
     left: false,
+    crashed: false,
     lastCheckpointIndex: 0
   };
 };
@@ -166,7 +167,9 @@ var updatePositionCar = (level2, car, delta) => {
   if (crashed) {
     car.velocityX *= -0.2;
     car.velocityY *= -0.2;
-    console.log("Hit", currentVelocity | 0);
+    if (currentVelocity > 0.2) {
+      car.crashed = true;
+    }
   } else {
     car.centerX = newCenterX;
     car.centerY = newCenterY;
@@ -184,24 +187,7 @@ var restartIfCarsTooFarAway = (level2, car12, car22) => {
   const deltaX = Math.abs(car12.centerX - car22.centerX);
   const deltaY = Math.abs(car12.centerY - car22.centerY);
   if (deltaX > CAMERA_WIDTH || deltaY > CAMERA_HEIGHT) {
-    const checkpointLocation = level2.pathPoints[level2.lastCheckpointReachedIndex];
-    const nextCheckpointLocation = level2.pathPoints[level2.lastCheckpointReachedIndex + 1];
-    let rotateToNextCheckpointAngleDegrees = 0;
-    if (nextCheckpointLocation) {
-      const differenceX = nextCheckpointLocation.x - checkpointLocation.x;
-      const differenceY = -(nextCheckpointLocation.y - checkpointLocation.y);
-      const radians = Math.atan2(differenceY, differenceX);
-      rotateToNextCheckpointAngleDegrees = -radians + Math.PI / 2;
-      car12.rotation = car22.rotation = rotateToNextCheckpointAngleDegrees;
-    }
-    const matrix = new DOMMatrix(`rotate(${rotateToNextCheckpointAngleDegrees || 0}rad) translate(${CAR_WIDTH}px, 0)`);
-    const car1Point = matrix.transformPoint(new DOMPoint(0, 0));
-    car12.centerX = car1Point.x + checkpointLocation.x;
-    car12.centerY = car1Point.y + checkpointLocation.y;
-    const car2Point = matrix.transformPoint(new DOMPoint(0, 0));
-    car22.centerX = -car2Point.x + checkpointLocation.x;
-    car22.centerY = -car2Point.y + checkpointLocation.y;
-    car12.velocityX = car12.velocityY = car22.velocityX = car22.velocityY = 0;
+    restartCarsFromCheckpoints(level2, car12, car22);
   }
 };
 var updateCheckpointForCar = (level2, car) => {
@@ -240,6 +226,28 @@ var updateCameraPosition = (gameDiv2, car12, car22) => {
   gameDiv2.scrollLeft = cameraCenterX - CAMERA_WIDTH / 2;
   gameDiv2.scrollTop = cameraCenterY - CAMERA_HEIGHT / 2;
 };
+var restartCarsFromCheckpoints = (level2, car12, car22) => {
+  car12.crashed = car22.crashed = false;
+  const checkpointLocation = level2.pathPoints[level2.lastCheckpointReachedIndex];
+  const nextCheckpointLocation = level2.pathPoints[level2.lastCheckpointReachedIndex + 1];
+  let rotateToNextCheckpointAngleDegrees = 0;
+  if (nextCheckpointLocation) {
+    const differenceX = nextCheckpointLocation.x - checkpointLocation.x;
+    const differenceY = -(nextCheckpointLocation.y - checkpointLocation.y);
+    const radians = Math.atan2(differenceY, differenceX);
+    rotateToNextCheckpointAngleDegrees = -radians + Math.PI / 2;
+    car12.rotation = car22.rotation = rotateToNextCheckpointAngleDegrees;
+  }
+  const matrix = new DOMMatrix(`rotate(${rotateToNextCheckpointAngleDegrees || 0}rad) translate(${CAR_WIDTH}px, 0)`);
+  const car1Point = matrix.transformPoint(new DOMPoint(0, 0));
+  car12.centerX = car1Point.x + checkpointLocation.x;
+  car12.centerY = car1Point.y + checkpointLocation.y;
+  const car2Point = matrix.transformPoint(new DOMPoint(0, 0));
+  car22.centerX = -car2Point.x + checkpointLocation.x;
+  car22.centerY = -car2Point.y + checkpointLocation.y;
+  car12.velocityX = car12.velocityY = car22.velocityX = car22.velocityY = 0;
+  car12.lastCheckpointIndex = car22.lastCheckpointIndex = level2.lastCheckpointReachedIndex;
+};
 
 // src/main.ts
 var gameDiv = document.getElementById("game");
@@ -247,7 +255,7 @@ gameDiv.style.setProperty("--width", `${CAMERA_WIDTH}px`);
 gameDiv.style.setProperty("--height", `${CAMERA_HEIGHT}px`);
 var level = await downloadLevel();
 gameDiv.appendChild(level.visual);
-var car1 = createCar(100, 50, "green", gameDiv);
+var car1 = createCar(100, 50, "yellow", gameDiv);
 var car2 = createCar(5e3, 50, "blue", gameDiv);
 var previous = performance.now();
 var update = (time) => {
@@ -260,7 +268,13 @@ var update = (time) => {
   updateVisuals(car1);
   updateVisuals(car2);
   updateCameraPosition(gameDiv, car1, car2);
-  requestAnimationFrame(update);
+  if (car1.crashed || car2.crashed)
+    setTimeout(() => {
+      restartCarsFromCheckpoints(level, car1, car2);
+      requestAnimationFrame(update);
+    }, 1e3);
+  else
+    requestAnimationFrame(update);
 };
 requestAnimationFrame(update);
 var handleKey = (key, pressed) => {

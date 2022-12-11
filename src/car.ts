@@ -11,6 +11,7 @@ export interface Car {
   breakPressed: boolean;
   right: boolean;
   left: boolean;
+  crashed: boolean;
   lastCheckpointIndex: number;
 }
 
@@ -19,7 +20,7 @@ const createElement = (root: HTMLElement, color: string): HTMLElement => {
   car.classList.add("car");
   car.style.setProperty("--width", `${CAR_WIDTH.toFixed(2)}px`);
   car.style.setProperty("--height", `${CAR_HEIGHT.toFixed(2)}px`);
-  car.style.backgroundColor = color;
+  car.style.background = `url("car-${color}.png")`;
   root.appendChild(car);
   return car;
 };
@@ -41,6 +42,7 @@ export const createCar = (
     breakPressed: false,
     right: false,
     left: false,
+    crashed: false,
     lastCheckpointIndex: 0,
   };
 };

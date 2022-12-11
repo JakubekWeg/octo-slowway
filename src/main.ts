@@ -1,7 +1,7 @@
 import { Car, createCar, updateVisuals } from "./car";
 import { CAMERA_HEIGHT, CAMERA_WIDTH } from "./constants";
 import { downloadLevel } from "./level";
-import { calculatePathProgress, restartIfCarsTooFarAway, updateCameraPosition, updatePositionCar } from "./physics";
+import { calculatePathProgress, restartCarsFromCheckpoints, restartIfCarsTooFarAway, updateCameraPosition, updatePositionCar } from "./physics";
 
 const gameDiv = document.getElementById("game");
 gameDiv.style.setProperty("--width", `${CAMERA_WIDTH}px`);
@@ -9,7 +9,7 @@ gameDiv.style.setProperty("--height", `${CAMERA_HEIGHT}px`);
 const level = await downloadLevel();
 gameDiv.appendChild(level.visual);
 
-const car1: Car = createCar(100, 50, "green", gameDiv);
+const car1: Car = createCar(100, 50, "yellow", gameDiv);
 const car2: Car = createCar(5000, 50, "blue", gameDiv);
 
 let previous = performance.now();
@@ -27,8 +27,13 @@ const update = (time: number) => {
   updateVisuals(car2);
 
   updateCameraPosition(gameDiv, car1, car2)
-
-  requestAnimationFrame(update);
+  if (car1.crashed || car2.crashed)
+    setTimeout(() => {
+      restartCarsFromCheckpoints(level, car1, car2)
+      requestAnimationFrame(update);
+    }, 1000);
+  else
+    requestAnimationFrame(update);
 };
 
 requestAnimationFrame(update);

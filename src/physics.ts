@@ -71,7 +71,9 @@ export const updatePositionCar = (level: Level, car: Car, delta: number) => {
   if (crashed) {
     car.velocityX *= -0.2;
     car.velocityY *= -0.2;
-    console.log("Hit", currentVelocity | 0);
+    if (currentVelocity > 0.2) {
+      car.crashed = true
+    }
   } else {
     car.centerX = newCenterX;
     car.centerY = newCenterY;
@@ -104,29 +106,7 @@ export const restartIfCarsTooFarAway = (level: Level, car1: Car, car2: Car) => {
 
 
   if (deltaX > CAMERA_WIDTH || deltaY > CAMERA_HEIGHT) {
-    const checkpointLocation = level.pathPoints[level.lastCheckpointReachedIndex]
-    const nextCheckpointLocation = level.pathPoints[level.lastCheckpointReachedIndex + 1]
-    let rotateToNextCheckpointAngleDegrees = 0
-    if (nextCheckpointLocation) {
-      const differenceX = nextCheckpointLocation.x - checkpointLocation.x
-      const differenceY = -(nextCheckpointLocation.y - checkpointLocation.y)
-
-      const radians = Math.atan2(differenceY, differenceX)
-
-      rotateToNextCheckpointAngleDegrees = (-radians + Math.PI / 2)
-      car1.rotation = car2.rotation = rotateToNextCheckpointAngleDegrees
-    }
-
-    const matrix = new DOMMatrix(`rotate(${rotateToNextCheckpointAngleDegrees || 0}rad) translate(${CAR_WIDTH}px, 0)`)
-    const car1Point = matrix.transformPoint(new DOMPoint(0, 0))
-    car1.centerX = car1Point.x + checkpointLocation.x
-    car1.centerY = car1Point.y + checkpointLocation.y
-
-    const car2Point = matrix.transformPoint(new DOMPoint(0, 0))
-    car2.centerX = -car2Point.x + checkpointLocation.x
-    car2.centerY = -car2Point.y + checkpointLocation.y
-
-    car1.velocityX = car1.velocityY = car2.velocityX = car2.velocityY = 0
+    restartCarsFromCheckpoints(level, car1, car2);
   }
 }
 
@@ -175,4 +155,33 @@ export const updateCameraPosition = (gameDiv: HTMLElement, car1: Car, car2: Car)
 
   gameDiv.scrollLeft = cameraCenterX - CAMERA_WIDTH / 2;
   gameDiv.scrollTop = cameraCenterY - CAMERA_HEIGHT / 2;
+}
+
+export const restartCarsFromCheckpoints = (level: Level, car1: Car, car2: Car) => {
+  car1.crashed = car2.crashed = false
+  const checkpointLocation = level.pathPoints[level.lastCheckpointReachedIndex]
+
+  const nextCheckpointLocation = level.pathPoints[level.lastCheckpointReachedIndex + 1]
+  let rotateToNextCheckpointAngleDegrees = 0
+  if (nextCheckpointLocation) {
+    const differenceX = nextCheckpointLocation.x - checkpointLocation.x
+    const differenceY = -(nextCheckpointLocation.y - checkpointLocation.y)
+
+    const radians = Math.atan2(differenceY, differenceX)
+
+    rotateToNextCheckpointAngleDegrees = (-radians + Math.PI / 2)
+    car1.rotation = car2.rotation = rotateToNextCheckpointAngleDegrees
+  }
+
+  const matrix = new DOMMatrix(`rotate(${rotateToNextCheckpointAngleDegrees || 0}rad) translate(${CAR_WIDTH}px, 0)`)
+  const car1Point = matrix.transformPoint(new DOMPoint(0, 0))
+  car1.centerX = car1Point.x + checkpointLocation.x
+  car1.centerY = car1Point.y + checkpointLocation.y
+
+  const car2Point = matrix.transformPoint(new DOMPoint(0, 0))
+  car2.centerX = -car2Point.x + checkpointLocation.x
+  car2.centerY = -car2Point.y + checkpointLocation.y
+
+  car1.velocityX = car1.velocityY = car2.velocityX = car2.velocityY = 0
+  car1.lastCheckpointIndex = car2.lastCheckpointIndex = level.lastCheckpointReachedIndex
 }

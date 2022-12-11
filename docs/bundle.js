@@ -137,11 +137,13 @@ var getPathPoints = (svgContent) => {
 };
 var downloadLevel = async () => {
   const content = await (await fetch("./level.svg")).text();
+  const points = getPathPoints(content);
   return {
     obstacles: await extractTextureData(content, "obstacles"),
     road: await extractTextureData(content, "road"),
     visual: await extractVisualCanvas(content),
-    pathPoints: getPathPoints(content),
+    pathPoints: [...points, ...points, ...points],
+    pointsPerLap: points.length,
     lastCheckpointReachedIndex: -1
   };
 };
@@ -287,6 +289,9 @@ var gameIsOver = (level2) => {
   }
   return false;
 };
+var getCurrentLap = (level2) => {
+  return Math.ceil(level2.lastCheckpointReachedIndex / level2.pointsPerLap);
+};
 
 // src/stats.ts
 var roadsToGrip = {
@@ -325,11 +330,11 @@ document.getElementById("game-container").style.setProperty("--height", `${CAMER
 var level = await downloadLevel();
 gameDiv.appendChild(level.visual);
 var startLevel = (stats) => {
-  console.log(stats);
   const car1 = createCar(stats, 100, 50, "yellow", gameDiv);
   const car2 = createCar(stats, 5e3, 50, "blue", gameDiv);
   const clock = new Clock();
   clock.uiElement = document.getElementById("time-car1");
+  const lapCounter = document.getElementById("lap-counter");
   let previous = performance.now();
   let paused = false;
   const update = (time) => {
@@ -346,6 +351,7 @@ var startLevel = (stats) => {
     updateVisuals(car1);
     updateVisuals(car2);
     updateCameraPosition(gameDiv, car1, car2);
+    lapCounter.innerText = `${getCurrentLap(level)}`;
     if (car1.crashed || car2.crashed || restartedCars) {
       paused = null;
       clock.pause();

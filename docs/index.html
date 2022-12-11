@@ -82,9 +82,14 @@
         --scale: 2;
         opacity: 0.4;
       }
+      .checkpoint {
+        display: none;
+      }
       #time-bar {
         padding: 4px 32px;
         background-color: #999;
+        display: flex;
+        justify-content: space-between;
       }
       #menu {
         display: grid;
@@ -165,6 +170,12 @@
         </div>
       </div>
     </div>
-    <div id="time-bar">TIME: <span id="time-car1">00:00</span></div>
+    <div id="time-bar">
+      <span>TIME: <span id="time-car1">00:00</span></span>
+      <span>LAP: <span id="lap-counter">0</span></span>
+      <span style="visibility: hidden"
+        >TIME: <span id="time-car2">00:00</span></span
+      >
+    </div>
   </body>
 </html>

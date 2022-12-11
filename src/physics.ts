@@ -190,3 +190,6 @@ export const gameIsOver = (level: Level): boolean => {
   }
   return false
 }
+export const getCurrentLap = (level: Level): number => {
+  return Math.ceil(level.lastCheckpointReachedIndex / level.pointsPerLap)
+}

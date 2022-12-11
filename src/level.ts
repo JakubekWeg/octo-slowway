@@ -10,6 +10,7 @@ export interface Level {
   road: Uint8ClampedArray;
   visual: HTMLCanvasElement;
   pathPoints: Point[];
+  pointsPerLap: number;
   lastCheckpointReachedIndex: number
 }
 
@@ -92,11 +93,14 @@ const getPathPoints = (svgContent: string) => {
 export const downloadLevel = async (): Promise<Level> => {
   const content = await (await fetch("./level.svg")).text();
 
+  const points = getPathPoints(content)
+
   return {
     obstacles: await extractTextureData(content, "obstacles"),
     road: await extractTextureData(content, "road"),
     visual: await extractVisualCanvas(content),
-    pathPoints: getPathPoints(content),
+    pathPoints: [...points, ...points, ...points],
+    pointsPerLap: points.length,
     lastCheckpointReachedIndex: -1,
   };
 };

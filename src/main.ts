@@ -2,7 +2,7 @@ import { Car, CarStats, createCar, updateVisuals } from "./car";
 import Clock from "./clock";
 import { CAMERA_HEIGHT, CAMERA_WIDTH } from "./constants";
 import { downloadLevel } from "./level";
-import { calculatePathProgress, gameIsOver, restartCarsFromCheckpoints, restartIfCarsTooFarAway, updateCameraPosition, updatePositionCar } from "./physics";
+import { calculatePathProgress, gameIsOver, getCurrentLap, restartCarsFromCheckpoints, restartIfCarsTooFarAway, updateCameraPosition, updatePositionCar } from "./physics";
 import { makeStats } from "./stats";
 
 const gameDiv = document.getElementById("game");
@@ -12,15 +12,12 @@ const level = await downloadLevel();
 gameDiv.appendChild(level.visual);
 
 const startLevel = (stats: CarStats) => {
-  console.log(stats);
-
-
-
   const car1: Car = createCar(stats, 100, 50, "yellow", gameDiv);
   const car2: Car = createCar(stats, 5000, 50, "blue", gameDiv);
 
   const clock = new Clock()
   clock.uiElement = document.getElementById('time-car1')
+  const lapCounter = document.getElementById('lap-counter')
   let previous = performance.now();
   let paused: boolean | null = false
   const update = (time: number) => {
@@ -41,6 +38,9 @@ const startLevel = (stats: CarStats) => {
     updateVisuals(car2);
 
     updateCameraPosition(gameDiv, car1, car2)
+
+    lapCounter.innerText = `${getCurrentLap(level)}`
+
     if (car1.crashed || car2.crashed || restartedCars) {
       paused = null
       clock.pause()
@@ -159,5 +159,3 @@ for (const option of document.getElementsByClassName('option')) {
     }
   })
 }
-
-// lap, 

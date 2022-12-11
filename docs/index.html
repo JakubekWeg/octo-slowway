@@ -8,6 +8,7 @@
     <script src="./bundle.js" type="module"></script>
     <style>
       html {
+        font-family: monospace;
         background-color: black;
       }
       body {
@@ -28,7 +29,8 @@
         position: absolute;
       }
       #replay-text,
-      #crash-text {
+      #crash-text,
+      #game-won-text {
         text-align: center;
         color: white;
         background-color: #22222288;
@@ -135,6 +137,7 @@
       <p id="replay-text" style="display: none">
         REPLAY<br />Cars were too far
       </p>
+      <p id="game-won-text" style="display: none">You WON</p>
       <div id="menu">
         <div>
           <div class="option separator"></div>
@@ -142,9 +145,9 @@
           <div class="option roads palegreen">WET ROADS</div>
           <div class="option roads palegreen">ICY ROADS</div>
           <div class="option separator"></div>
-          <div class="option speed purple selected">FASTEST TOP SPEED</div>
+          <div class="option speed purple">FASTEST TOP SPEED</div>
           <div class="option speed purple">FASTER TOP SPEED</div>
-          <div class="option speed purple">FAST TOP SPEED</div>
+          <div class="option speed purple selected">FAST TOP SPEED</div>
           <div class="option speed purple">NORMAL TOP SPEED</div>
           <div class="option separator"></div>
           <div class="option acceleration green">SLOW ACCELERATION</div>

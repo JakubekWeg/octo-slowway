@@ -2,7 +2,7 @@ import { Car, CarStats, createCar, updateVisuals } from "./car";
 import Clock from "./clock";
 import { CAMERA_HEIGHT, CAMERA_WIDTH } from "./constants";
 import { downloadLevel } from "./level";
-import { calculatePathProgress, restartCarsFromCheckpoints, restartIfCarsTooFarAway, updateCameraPosition, updatePositionCar } from "./physics";
+import { calculatePathProgress, gameIsOver, restartCarsFromCheckpoints, restartIfCarsTooFarAway, updateCameraPosition, updatePositionCar } from "./physics";
 import { makeStats } from "./stats";
 
 const gameDiv = document.getElementById("game");
@@ -58,8 +58,12 @@ const startLevel = (stats: CarStats) => {
         requestAnimationFrame(update);
       }, 3000);
     }
-    else
+    else if (gameIsOver(level)) {
+      document.getElementById('game-won-text').style.display = ''
+    }
+    else {
       requestAnimationFrame(update);
+    }
   };
 
   document.getElementById('replay-text').style.opacity = '0'

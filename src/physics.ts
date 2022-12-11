@@ -184,3 +184,9 @@ export const restartCarsFromCheckpoints = (level: Level, car1: Car, car2: Car) =
   car1.velocityX = car1.velocityY = car2.velocityX = car2.velocityY = 0
   car1.lastCheckpointIndex = car2.lastCheckpointIndex = level.lastCheckpointReachedIndex
 }
+export const gameIsOver = (level: Level): boolean => {
+  if (level.lastCheckpointReachedIndex >= level.pathPoints.length - 1) {
+    return true
+  }
+  return false
+}

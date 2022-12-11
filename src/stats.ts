@@ -30,7 +30,7 @@ export const makeStats = (roads: keyof typeof roadsToGrip, speed: keyof typeof s
         gripGround: roadsToGrip[roads][1],
         accelerationGround: accelerationMap[acceleration],
         accelerationRoad: accelerationMap[acceleration],
-        turnSpeed: 0.002
+        turnSpeed: 0.003
     }
 
     return stats

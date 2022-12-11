@@ -56,6 +56,8 @@ var Clock = class {
     return Math.round((this.timerId !== void 0 ? this.totalTime + performance.now() - this.startTime : this.totalTime) / 1e3);
   }
   pause() {
+    if (this.timerId === void 0)
+      return;
     this.totalTime += performance.now() - this.startTime;
     clearInterval(this.timerId);
     this.timerId = void 0;
@@ -279,6 +281,12 @@ var restartCarsFromCheckpoints = (level2, car1, car2) => {
   car1.velocityX = car1.velocityY = car2.velocityX = car2.velocityY = 0;
   car1.lastCheckpointIndex = car2.lastCheckpointIndex = level2.lastCheckpointReachedIndex;
 };
+var gameIsOver = (level2) => {
+  if (level2.lastCheckpointReachedIndex >= level2.pathPoints.length - 1) {
+    return true;
+  }
+  return false;
+};
 
 // src/stats.ts
 var roadsToGrip = {
@@ -305,7 +313,7 @@ var makeStats = (roads, speed, acceleration) => {
     gripGround: roadsToGrip[roads][1],
     accelerationGround: accelerationMap[acceleration],
     accelerationRoad: accelerationMap[acceleration],
-    turnSpeed: 2e-3
+    turnSpeed: 3e-3
   };
   return stats;
 };
@@ -354,8 +362,11 @@ var startLevel = (stats) => {
         clock.start();
         requestAnimationFrame(update);
       }, 3e3);
-    } else
+    } else if (gameIsOver(level)) {
+      document.getElementById("game-won-text").style.display = "";
+    } else {
       requestAnimationFrame(update);
+    }
   };
   document.getElementById("replay-text").style.opacity = "0";
   setTimeout(() => {

@@ -17,6 +17,7 @@ export default class Clock {
     }
 
     public pause(): void {
+        if (this.timerId === undefined) return
         this.totalTime += performance.now() - this.startTime
         clearInterval(this.timerId)
         this.timerId = undefined

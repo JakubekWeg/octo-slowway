@@ -13,14 +13,14 @@ import {
   TURN_SPEED_GROUND,
   TURN_SPEED_ROAD
 } from "./constants";
-import { isThereAnyColor, Level } from "./level";
+import { isThereAnyColor, Level, Point } from "./level";
 
 const distanceSquared = (ax: number, ay: number, bx: number, by: number) => {
   return (ax - bx) ** 2 + (ay - by) ** 2
 }
 
-export const updatePositionCar = (level: Level, car: Car, delta: number) => {
-  const isOnRoad = checkCarPosition(
+export const updatePositionCar = (level: Level, car: Car, delta: number, otherCarPosition: Point) => {
+  const isOnRoad = checkIfInObstacle(
     level.road,
     car.centerX,
     car.centerY,
@@ -61,12 +61,12 @@ export const updatePositionCar = (level: Level, car: Car, delta: number) => {
 
   const newCenterX = car.centerX + car.velocityX * delta;
   const newCenterY = car.centerY - car.velocityY * delta;
-  const crashed = checkCarPosition(
+  const crashed = checkIfInObstacle(
     level.obstacles,
     newCenterX,
     newCenterY,
     car.rotation
-  );
+  ) || checkIfCarsTooNear({ x: newCenterX, y: newCenterY }, otherCarPosition);
 
   if (crashed) {
     car.velocityX *= -0.2;
@@ -81,7 +81,7 @@ export const updatePositionCar = (level: Level, car: Car, delta: number) => {
   }
 };
 
-const checkCarPosition = (
+const checkIfInObstacle = (
   data: Uint8ClampedArray,
   cx: number,
   cy: number,
@@ -98,6 +98,12 @@ const checkCarPosition = (
     isThereAnyColor(data, cx + x1 - x2, cy - y1 + y2) || // front left
     false
   );
+};
+
+const checkIfCarsTooNear = (
+  a: Point, b: Point
+): boolean => {
+  return distanceSquared(a.x, a.y, b.x, b.y) < CAR_WIDTH * CAR_HEIGHT;
 };
 
 export const restartIfCarsTooFarAway = (level: Level, car1: Car, car2: Car) => {

@@ -29,7 +29,7 @@ var createCar = (x, y, color, root) => {
     element: createElement(root, color),
     centerX: x,
     centerY: y,
-    rotation: 1e-5,
+    rotation: 0,
     velocityX: 0,
     velocityY: 0,
     gasPressed: false,
@@ -129,8 +129,8 @@ var isThereAnyColor = (data, x, y) => {
 var distanceSquared = (ax, ay, bx, by) => {
   return (ax - bx) ** 2 + (ay - by) ** 2;
 };
-var updatePositionCar = (level2, car, delta) => {
-  const isOnRoad = checkCarPosition(
+var updatePositionCar = (level2, car, delta, otherCarPosition) => {
+  const isOnRoad = checkIfInObstacle(
     level2.road,
     car.centerX,
     car.centerY,
@@ -158,12 +158,12 @@ var updatePositionCar = (level2, car, delta) => {
   car.velocityY += addedAcceleration * Math.sin(-car.rotation + Math.PI / 2);
   const newCenterX = car.centerX + car.velocityX * delta;
   const newCenterY = car.centerY - car.velocityY * delta;
-  const crashed = checkCarPosition(
+  const crashed = checkIfInObstacle(
     level2.obstacles,
     newCenterX,
     newCenterY,
     car.rotation
-  );
+  ) || checkIfCarsTooNear({ x: newCenterX, y: newCenterY }, otherCarPosition);
   if (crashed) {
     car.velocityX *= -0.2;
     car.velocityY *= -0.2;
@@ -176,12 +176,15 @@ var updatePositionCar = (level2, car, delta) => {
     car.rotation = newRotation;
   }
 };
-var checkCarPosition = (data, cx, cy, angle) => {
+var checkIfInObstacle = (data, cx, cy, angle) => {
   const x1 = CAR_HEIGHT / 2 * Math.cos(-angle + Math.PI / 2);
   const y1 = CAR_HEIGHT / 2 * Math.sin(-angle + Math.PI / 2);
   const x2 = CAR_WIDTH / 2 * Math.cos(-angle);
   const y2 = CAR_WIDTH / 2 * Math.sin(-angle);
   return isThereAnyColor(data, cx - x1 - x2, cy + y1 + y2) || isThereAnyColor(data, cx + x1 + x2, cy - y1 - y2) || isThereAnyColor(data, cx - x1 + x2, cy + y1 - y2) || isThereAnyColor(data, cx + x1 - x2, cy - y1 + y2) || false;
+};
+var checkIfCarsTooNear = (a, b) => {
+  return distanceSquared(a.x, a.y, b.x, b.y) < CAR_WIDTH * CAR_HEIGHT;
 };
 var restartIfCarsTooFarAway = (level2, car12, car22) => {
   const deltaX = Math.abs(car12.centerX - car22.centerX);
@@ -261,8 +264,8 @@ var previous = performance.now();
 var update = (time) => {
   const delta = time - previous;
   previous = time;
-  updatePositionCar(level, car1, delta);
-  updatePositionCar(level, car2, delta);
+  updatePositionCar(level, car1, delta, { x: car2.centerX, y: car2.centerY });
+  updatePositionCar(level, car2, delta, { x: car1.centerX, y: car1.centerY });
   calculatePathProgress(gameDiv, level, car1, car2);
   restartIfCarsTooFarAway(level, car1, car2);
   updateVisuals(car1);

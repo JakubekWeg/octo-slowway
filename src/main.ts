@@ -17,8 +17,8 @@ const update = (time: number) => {
   const delta = time - previous;
   previous = time;
 
-  updatePositionCar(level, car1, delta);
-  updatePositionCar(level, car2, delta);
+  updatePositionCar(level, car1, delta, { x: car2.centerX, y: car2.centerY });
+  updatePositionCar(level, car2, delta, { x: car1.centerX, y: car1.centerY });
 
   calculatePathProgress(gameDiv, level, car1, car2)
   restartIfCarsTooFarAway(level, car1, car2)

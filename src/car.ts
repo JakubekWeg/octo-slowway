@@ -35,7 +35,7 @@ export const createCar = (
     element: createElement(root, color),
     centerX: x,
     centerY: y,
-    rotation: 0.00001,
+    rotation: 0,
     velocityX: 0,
     velocityY: 0,
     gasPressed: false,

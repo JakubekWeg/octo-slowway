@@ -1,6 +1,7 @@
 import { Car, CarStats, createCar, updateVisuals } from "./car";
 import Clock from "./clock";
 import { CAMERA_HEIGHT, CAMERA_WIDTH } from "./constants";
+import { bind } from "./explosion";
 import { downloadLevel } from "./level";
 import { calculatePathProgress, gameIsOver, getCurrentLap, restartCarsFromCheckpoints, restartIfCarsTooFarAway, updateCameraPosition, updatePositionCar } from "./physics";
 import { makeStats } from "./stats";
@@ -10,6 +11,8 @@ document.getElementById('game-container').style.setProperty("--width", `${CAMERA
 document.getElementById('game-container').style.setProperty("--height", `${CAMERA_HEIGHT}px`);
 const level = await downloadLevel();
 gameDiv.appendChild(level.visual);
+
+const explosion = bind(document.querySelector('.explosion'))
 
 const startLevel = (stats: CarStats, single: boolean) => {
   const car1: Car = createCar(stats, 100, 50, "yellow", gameDiv);
@@ -48,6 +51,11 @@ const startLevel = (stats: CarStats, single: boolean) => {
     lapCounter.innerText = `${getCurrentLap(level)}`
 
     if (car1.crashed || car2.crashed || restartedCars) {
+      if (car1.crashed)
+        explosion.show(car1.centerX, car1.centerY)
+      if (car2.crashed && car1 !== car2)
+        explosion.show(car2.centerX, car2.centerY)
+
       paused = null
       clock.pause()
       if (restartedCars)

@@ -63,6 +63,42 @@
           rotate(var(--angle));
         box-sizing: border-box;
       }
+      @keyframes ExplosionAnimation {
+        0% {
+          transform: rotate(var(--rotation)) scale(0.2);
+        }
+        70% {
+          transform: rotate(var(--rotation)) scale(1);
+        }
+        100% {
+          transform: rotate(var(--rotation)) scale(0.001);
+        }
+      }
+      .explosion {
+        z-index: 1;
+        position: absolute;
+        top: 0;
+        left: 0;
+        --rotation: 0deg;
+        transform-origin: center;
+        animation: ExplosionAnimation 3s linear both;
+        transform: rotate(var(--rotation));
+      }
+      .explosion.gone {
+        display: none;
+        animation: none;
+      }
+      .explosion > img {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        image-rendering: pixelated;
+        transform: translate(-50%, -50%) scale(0.5);
+      }
+      .explosion > img.visible {
+        display: block;
+      }
       .checkpoint {
         width: 8px;
         height: 8px;
@@ -135,7 +171,13 @@
   </head>
   <body>
     <div id="game-container">
-      <div id="game"></div>
+      <div id="game">
+        <div class="explosion">
+          <img src="./wybuch1.png" alt="" />
+          <img src="./wybuch2.png" alt="" />
+          <img src="./wybuch3.png" alt="" />
+        </div>
+      </div>
       <p id="crash-text" style="display: none">
         REPLAY<br /><span id="crashed-player-id">someone</span> crashed their
         car

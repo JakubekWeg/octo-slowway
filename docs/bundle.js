@@ -73,6 +73,34 @@ var Clock = class {
   }
 };
 
+// src/explosion.ts
+var bind = (element) => {
+  let visible = false;
+  element.classList.add("gone");
+  const images = [...element.getElementsByTagName("img")];
+  let n = 0;
+  setInterval(() => {
+    if (!visible)
+      return;
+    element.style.setProperty("--rotation", `${(Math.random() * 4 | 0) * 90}deg`);
+    images[n].classList.remove("visible");
+    n = (n + 1) % 3;
+    images[n].classList.add("visible");
+  }, 100);
+  return {
+    show: (x, y) => {
+      visible = true;
+      element.style.top = `${y}px`;
+      element.style.left = `${x}px`;
+      element.classList.remove("gone");
+      setTimeout(() => {
+        visible = false;
+        element.classList.add("gone");
+      }, 5e3);
+    }
+  };
+};
+
 // src/level.ts
 var getSourceFilterGroup = (content, name) => {
   const svgDoc = new DOMParser().parseFromString(content, "image/svg+xml");
@@ -330,6 +358,7 @@ document.getElementById("game-container").style.setProperty("--width", `${CAMERA
 document.getElementById("game-container").style.setProperty("--height", `${CAMERA_HEIGHT}px`);
 var level = await downloadLevel();
 gameDiv.appendChild(level.visual);
+var explosion = bind(document.querySelector(".explosion"));
 var startLevel = (stats, single) => {
   const car1 = createCar(stats, 100, 50, "yellow", gameDiv);
   const car2 = single ? car1 : createCar(stats, 5e3, 50, "blue", gameDiv);
@@ -360,6 +389,10 @@ var startLevel = (stats, single) => {
     updateCameraPosition(gameDiv, car1, car2);
     lapCounter.innerText = `${getCurrentLap(level)}`;
     if (car1.crashed || car2.crashed || restartedCars) {
+      if (car1.crashed)
+        explosion.show(car1.centerX, car1.centerY);
+      if (car2.crashed && car1 !== car2)
+        explosion.show(car2.centerX, car2.centerY);
       paused = null;
       clock.pause();
       if (restartedCars)

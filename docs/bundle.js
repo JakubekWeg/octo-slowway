@@ -144,7 +144,7 @@ var downloadLevel = async () => {
     visual: await extractVisualCanvas(content),
     pathPoints: [...points, ...points, ...points],
     pointsPerLap: points.length,
-    lastCheckpointReachedIndex: -1
+    lastCheckpointReachedIndex: 0
   };
 };
 var isThereAnyColor = (data, x, y) => {
@@ -193,7 +193,7 @@ var updatePositionCar = (level2, car, delta, otherCarPosition) => {
     newCenterX,
     newCenterY,
     car.rotation
-  ) || checkIfCarsTooNear({ x: newCenterX, y: newCenterY }, otherCarPosition);
+  ) || (otherCarPosition ? checkIfCarsTooNear({ x: newCenterX, y: newCenterY }, otherCarPosition) : false);
   if (crashed) {
     car.velocityX *= -0.2;
     car.velocityY *= -0.2;
@@ -219,7 +219,7 @@ var checkIfCarsTooNear = (a, b) => {
 var restartIfCarsTooFarAway = (level2, car1, car2) => {
   const deltaX = Math.abs(car1.centerX - car2.centerX);
   const deltaY = Math.abs(car1.centerY - car2.centerY);
-  if (deltaX > CAMERA_WIDTH || deltaY > CAMERA_HEIGHT) {
+  if (deltaX > CAMERA_WIDTH || deltaY > CAMERA_HEIGHT || car1 === car2) {
     restartCarsFromCheckpoints(level2, car1, car2);
     return true;
   }
@@ -236,7 +236,8 @@ var updateCheckpointForCar = (level2, car) => {
 };
 var calculatePathProgress = (gameDiv2, level2, car1, car2) => {
   updateCheckpointForCar(level2, car1);
-  updateCheckpointForCar(level2, car2);
+  if (car1 !== car2)
+    updateCheckpointForCar(level2, car2);
   const sharedCheckpointIndex = Math.min(car1.lastCheckpointIndex, car2.lastCheckpointIndex);
   if (level2.lastCheckpointReachedIndex !== sharedCheckpointIndex) {
     level2.lastCheckpointReachedIndex = sharedCheckpointIndex;
@@ -329,14 +330,15 @@ document.getElementById("game-container").style.setProperty("--width", `${CAMERA
 document.getElementById("game-container").style.setProperty("--height", `${CAMERA_HEIGHT}px`);
 var level = await downloadLevel();
 gameDiv.appendChild(level.visual);
-var startLevel = (stats) => {
+var startLevel = (stats, single) => {
   const car1 = createCar(stats, 100, 50, "yellow", gameDiv);
-  const car2 = createCar(stats, 5e3, 50, "blue", gameDiv);
+  const car2 = single ? car1 : createCar(stats, 5e3, 50, "blue", gameDiv);
   const clock = new Clock();
   clock.uiElement = document.getElementById("time-car1");
   const lapCounter = document.getElementById("lap-counter");
   let previous = performance.now();
   let paused = false;
+  restartIfCarsTooFarAway(level, car1, car2);
   const update = (time) => {
     const delta = time - previous;
     previous = time;
@@ -344,12 +346,17 @@ var startLevel = (stats) => {
       requestAnimationFrame(update);
       return;
     }
-    updatePositionCar(level, car1, delta, { x: car2.centerX, y: car2.centerY });
-    updatePositionCar(level, car2, delta, { x: car1.centerX, y: car1.centerY });
+    if (single)
+      updatePositionCar(level, car1, delta, void 0);
+    else {
+      updatePositionCar(level, car1, delta, { x: car2.centerX, y: car2.centerY });
+      updatePositionCar(level, car2, delta, { x: car1.centerX, y: car1.centerY });
+    }
     calculatePathProgress(gameDiv, level, car1, car2);
-    const restartedCars = restartIfCarsTooFarAway(level, car1, car2);
+    const restartedCars = single ? false : restartIfCarsTooFarAway(level, car1, car2);
     updateVisuals(car1);
-    updateVisuals(car2);
+    if (!single)
+      updateVisuals(car2);
     updateCameraPosition(gameDiv, car1, car2);
     lapCounter.innerText = `${getCurrentLap(level)}`;
     if (car1.crashed || car2.crashed || restartedCars) {
@@ -453,8 +460,9 @@ for (const option of document.getElementsByClassName("option")) {
       const roads = document.querySelector(".selected.option.roads").textContent.trim().split(" ")[0].toLowerCase();
       const speed = document.querySelector(".selected.option.speed").textContent.trim().split(" ")[0].toLowerCase();
       const acceleration = document.querySelector(".selected.option.acceleration").textContent.trim().split(" ")[0].toLowerCase();
+      const single = option.classList.contains("alone");
       document.getElementById("menu").remove();
-      startLevel(makeStats(roads, speed, acceleration));
+      startLevel(makeStats(roads, speed, acceleration), single);
     }
   });
 }

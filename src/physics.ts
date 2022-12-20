@@ -5,13 +5,13 @@ import {
   CAR_HEIGHT,
   CAR_WIDTH,
 } from "./constants";
-import { isThereAnyColor, Level, Point } from "./level";
+import { Level, Point, isThereAnyColor } from "./level";
 
 const distanceSquared = (ax: number, ay: number, bx: number, by: number) => {
   return (ax - bx) ** 2 + (ay - by) ** 2
 }
 
-export const updatePositionCar = (level: Level, car: Car, delta: number, otherCarPosition: Point) => {
+export const updatePositionCar = (level: Level, car: Car, delta: number, otherCarPosition: Point | undefined) => {
   const isOnRoad = checkIfInObstacle(
     level.road,
     car.centerX,
@@ -58,7 +58,7 @@ export const updatePositionCar = (level: Level, car: Car, delta: number, otherCa
     newCenterX,
     newCenterY,
     car.rotation
-  ) || checkIfCarsTooNear({ x: newCenterX, y: newCenterY }, otherCarPosition);
+  ) || (otherCarPosition ? checkIfCarsTooNear({ x: newCenterX, y: newCenterY }, otherCarPosition) : false);
 
   if (crashed) {
     car.velocityX *= -0.2;
@@ -102,7 +102,7 @@ export const restartIfCarsTooFarAway = (level: Level, car1: Car, car2: Car): boo
   const deltaX = Math.abs(car1.centerX - car2.centerX)
   const deltaY = Math.abs(car1.centerY - car2.centerY)
 
-  if (deltaX > CAMERA_WIDTH || deltaY > CAMERA_HEIGHT) {
+  if (deltaX > CAMERA_WIDTH || deltaY > CAMERA_HEIGHT || car1 === car2) {
     restartCarsFromCheckpoints(level, car1, car2);
     return true
   }
@@ -122,7 +122,8 @@ export const updateCheckpointForCar = (level: Level, car: Car) => {
 
 export const calculatePathProgress = (gameDiv: HTMLElement, level: Level, car1: Car, car2: Car) => {
   updateCheckpointForCar(level, car1)
-  updateCheckpointForCar(level, car2)
+  if (car1 !== car2)
+    updateCheckpointForCar(level, car2)
 
   const sharedCheckpointIndex = Math.min(car1.lastCheckpointIndex, car2.lastCheckpointIndex)
 

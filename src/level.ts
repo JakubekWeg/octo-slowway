@@ -101,7 +101,7 @@ export const downloadLevel = async (): Promise<Level> => {
     visual: await extractVisualCanvas(content),
     pathPoints: [...points, ...points, ...points],
     pointsPerLap: points.length,
-    lastCheckpointReachedIndex: -1,
+    lastCheckpointReachedIndex: 0,
   };
 };
 export const isThereAnyColor = (

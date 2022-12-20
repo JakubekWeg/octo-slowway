@@ -11,15 +11,16 @@ document.getElementById('game-container').style.setProperty("--height", `${CAMER
 const level = await downloadLevel();
 gameDiv.appendChild(level.visual);
 
-const startLevel = (stats: CarStats) => {
+const startLevel = (stats: CarStats, single: boolean) => {
   const car1: Car = createCar(stats, 100, 50, "yellow", gameDiv);
-  const car2: Car = createCar(stats, 5000, 50, "blue", gameDiv);
+  const car2: Car = single ? car1 : createCar(stats, 5000, 50, "blue", gameDiv);
 
   const clock = new Clock()
   clock.uiElement = document.getElementById('time-car1')
   const lapCounter = document.getElementById('lap-counter')
   let previous = performance.now();
   let paused: boolean | null = false
+  restartIfCarsTooFarAway(level, car1, car2)
   const update = (time: number) => {
     const delta = time - previous;
     previous = time;
@@ -28,14 +29,19 @@ const startLevel = (stats: CarStats) => {
       return
     }
 
-    updatePositionCar(level, car1, delta, { x: car2.centerX, y: car2.centerY });
-    updatePositionCar(level, car2, delta, { x: car1.centerX, y: car1.centerY });
+    if (single)
+      updatePositionCar(level, car1, delta, undefined);
+    else {
+      updatePositionCar(level, car1, delta, { x: car2.centerX, y: car2.centerY });
+      updatePositionCar(level, car2, delta, { x: car1.centerX, y: car1.centerY });
+    }
 
     calculatePathProgress(gameDiv, level, car1, car2)
-    const restartedCars = restartIfCarsTooFarAway(level, car1, car2)
+    const restartedCars = single ? false : restartIfCarsTooFarAway(level, car1, car2)
 
     updateVisuals(car1);
-    updateVisuals(car2);
+    if (!single)
+      updateVisuals(car2);
 
     updateCameraPosition(gameDiv, car1, car2)
 
@@ -127,8 +133,6 @@ const startLevel = (stats: CarStats) => {
   );
 }
 
-
-
 for (const option of document.getElementsByClassName('option')) {
   const forRoads = option.classList.contains('roads')
   const forSpeed = option.classList.contains('speed')
@@ -148,14 +152,15 @@ for (const option of document.getElementsByClassName('option')) {
         other.classList.remove('selected')
       option.classList.add('selected')
     } else if (option.classList.contains('start')) {
-
       const roads = document.querySelector('.selected.option.roads').textContent.trim().split(' ')[0].toLowerCase()
       const speed = document.querySelector('.selected.option.speed').textContent.trim().split(' ')[0].toLowerCase()
       const acceleration = document.querySelector('.selected.option.acceleration').textContent.trim().split(' ')[0].toLowerCase()
 
+      const single = option.classList.contains('alone')
+
       document.getElementById('menu').remove()
 
-      startLevel(makeStats(roads as any, speed as any, acceleration as any))
+      startLevel(makeStats(roads as any, speed as any, acceleration as any), single)
     }
   })
 }
